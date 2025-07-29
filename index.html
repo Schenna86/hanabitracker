@@ -278,34 +278,41 @@ function start(n) {
       saveState();
     }
 
-    function assegnaIndizioColore(colore) {
-      pushHistory();
-      carte.forEach((c, i) => {
-        if (c.selected) {
-          if (!c.colore.includes(colore)) c.colore.push(colore);
-        } else {
-          if (!c.notColor.includes(colore)) c.notColor.push(colore);
-        }
-        c.selected = false;
-      });
-      aggiornaArcobaleni();
-      render();
-      saveState();
-    }
+   function assegnaIndizioColore(colore) {
+  const almenoUnaSelezionata = carte.some(c => c.selected);
+  if (!almenoUnaSelezionata) return;
 
-    function assegnaIndizioNumero(numero) {
-      pushHistory();
-      carte.forEach((c, i) => {
-        if (c.selected) {
-          c.numero = numero;
-        } else {
-          if (!c.notNumber.includes(numero)) c.notNumber.push(numero);
-        }
-        c.selected = false;
-      });
-      render();
-      saveState();
+  pushHistory();
+  carte.forEach((c) => {
+    if (c.selected) {
+      if (!c.colore.includes(colore)) c.colore.push(colore);
+    } else {
+      if (!c.notColor.includes(colore)) c.notColor.push(colore);
     }
+    c.selected = false;
+  });
+  aggiornaArcobaleni();
+  render();
+  saveState();
+}
+
+
+   function assegnaIndizioNumero(numero) {
+  const almenoUnaSelezionata = carte.some(c => c.selected);
+  if (!almenoUnaSelezionata) return;
+
+  pushHistory();
+  carte.forEach((c) => {
+    if (c.selected) {
+      c.numero = numero;
+    } else {
+      if (!c.notNumber.includes(numero)) c.notNumber.push(numero);
+    }
+    c.selected = false;
+  });
+  render();
+  saveState();
+}
 
     function aggiornaArcobaleni() {
       carte.forEach(c => {
