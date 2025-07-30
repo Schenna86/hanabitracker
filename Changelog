@@ -1,0 +1,34 @@
+Update 30/07/2025
+🔧 Funzionalità nuove e miglioramenti:
+Separazione delle negazioni automatiche generate dal pulsante "Genera Negazioni":
+
+Ora notColorAuto e notNumberAuto vengono visualizzate separatamente sotto ogni carta con un'opacità ridotta.
+
+Gestione della logica colore/arcobaleno migliorata:
+
+Quando si selezionano più carte e si dà un indizio di colore, le carte selezionate potranno essere di quel colore o arcobaleno.
+
+Le carte non selezionate ricevono una negazione sia del colore indicato che dell’arcobaleno.
+
+Se viene selezionata una sola carta, le altre ricevono la negazione sia del colore indicato che dell’arcobaleno, perché l’arcobaleno non può essere segnalato con un solo indizio.
+
+Esclusione del tracciamento delle carte residue nello storico (Undo):
+
+Ora cliccare sulle carte residue non viene più registrato nello stack di undo, così da non inquinare la cronologia delle modifiche reali.
+
+💡 Miglioramenti UX:
+Prevenzione indizi inutili:
+
+Il sistema blocca l’assegnazione di indizi colore/numero se nessuna carta è selezionata.
+
+Modalità Arcobaleno gestita dinamicamente via URL:
+
+Se disattivata, il colore arcobaleno viene escluso anche nei casi di doppio colore.
+
+Nuova logica per il reset delle carte:
+
+La modalità di reset può essere sinistra, destra, o sostituisci, impostata tramite parametro URL.
+
+Pulsante “Torna alla Home” con doppia conferma:
+
+Previene il ritorno accidentale e il reset dello stato salvato.
