@@ -1,438 +1,78 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hanabi Tracker</title>
+  <title>Hanabi - Selezione Iniziale</title>
   <style>
     body {
+      background: #333;
+      color: white;
       font-family: sans-serif;
-      background: #424242;
-      margin: 0;
-      padding: 1rem;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 1.5rem;
-    }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 0.75rem;
-    }
-    .card {
-      background: #7d7d7d;
-      border: 2px solid #ccc;
-      border-radius: 1rem;
-      padding: 0.75rem;
-      text-align: center;
-      cursor: pointer;
-      transition: 0.2s;
-      position: relative;
-    }
-    .card.selected {
-      border-color: #007bff;
-      box-shadow: 0 0 10px rgba(0,123,255,0.5);
-    }
-    .card .main {
-      font-size: 2rem;
-      font-weight: bold;
-    }
-    .indizi-negativi {
-      font-size: 0.75rem;
-      margin-top: 0.3rem;
-      color: #ccc;
-    }
-    .controls {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1rem;
-      margin-top: 1.5rem;
+      padding: 2rem;
     }
-    .control-row {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      justify-content: center;
+    h1 {
+      margin-bottom: 1rem;
     }
-    .controls button {
-      padding: 0.5rem 1rem;
+    .option-group {
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    label {
+      margin-right: 1rem;
+    }
+    button {
+      padding: 0.6rem 1.2rem;
       font-size: 1rem;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
-      min-width: 60px;
-    }
-    .yellow { color: gold; }
-    .red { color: red; }
-    .blue { color: blue; }
-    .green { color: green; }
-    .white { color: white; }
-    .rainbow {
-      background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: bold;
-    }
-    .reset-button {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: #f0f0f0;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 0.7rem;
-      padding: 2px 5px;
-    }
-    .residue-section {
-      align-items: center;
-      margin-top: 2rem;
-    }
-    .residue-row {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.5rem;
-      gap: 0.3rem;
-      flex-wrap: wrap;
-    }
-    .residue-label {
-      visibility: hidden;
-      width: 0;
-      margin: 0;
-      padding: 0;
-    }
-    .residue-button {
-      padding: 0.3rem 0.6rem;
-      border-radius: 5px;
-      background: #ccc;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      min-width: 28px;
-      text-align: center;
-      transition: background 0.2s, opacity 0.2s;
-    }
-    .residue-button.oscurata {
-      background: #333;
+      background: #007bff;
       color: white;
-      opacity: 0.4;
     }
-    .residue-row[data-colore="Gia"] .residue-button { color: gold; }
-    .residue-row[data-colore="Ros"] .residue-button { color: red; }
-    .residue-row[data-colore="Blu"] .residue-button { color: blue; }
-    .residue-row[data-colore="Ver"] .residue-button { color: green; }
-    .residue-row[data-colore="Bia"] .residue-button { color: white; }
-    .residue-row[data-colore="Arcobaleno"] .residue-button {
-	background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      font-weight: bold}
-
-    @media (max-width: 600px) {
-      body {
-        padding: 0.5rem;
-      }
-      .card {
-        padding: 0.5rem;
-      }
-      .card .main {
-        font-size: 1.5rem;
-      }
-      .controls button {
-        font-size: 0.9rem;
-        padding: 0.4rem 0.8rem;
-        min-width: 50px;
-      }
-      .reset-button {
-        font-size: 0.6rem;
-      }
+    .radio-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>Hanabi Tracker</h1>
-      <button onclick="start(4)">4 Carte</button>
-      <button onclick="start(5)">5 Carte</button>
-      <button onclick="undo()" style="margin-left: 10px;">Undo</button>
-	<button onclick="generaNegazioni()">Genera Negazioni</button>
-    </div>
-    <div class="cards" id="cards"></div>
-    <div class="controls">
-      <div class="control-row" id="color-controls"></div>
-      <div class="control-row" id="number-controls"></div>
-    </div>
-    <div class="residue-section">
-      <h2>Carte Residue</h2>
-      <div id="residue-tracker"></div>
+  <h1>Hanabi Tracker</h1>
+
+  <div class="option-group">
+    <h3>Numero di carte</h3>
+    <label><input type="radio" name="carte" value="4" checked /> 4 carte</label>
+    <label><input type="radio" name="carte" value="5" /> 5 carte</label>
+  </div>
+
+  <div class="option-group">
+    <h3>Colore Arcobaleno</h3>
+    <label><input type="checkbox" id="arcobaleno" checked /> Attivo</label>
+  </div>
+
+  <div class="option-group">
+    <h3>Posizione della nuova carta dopo il reset</h3>
+    <div class="radio-group">
+      <label><input type="radio" name="posizione" value="sinistra" checked /> Sinistra</label>
+      <label><input type="radio" name="posizione" value="destra" /> Destra</label>
+      <label><input type="radio" name="posizione" value="sostituisci" /> Sostituisci</label>
     </div>
   </div>
 
+  <button onclick="inizia()">Inizia</button>
+
   <script>
-    const COLORI_INDIZI = ['Gia', 'Ros', 'Blu', 'Ver', 'Bia'];
-    const COLORI = [...COLORI_INDIZI, 'Arcobaleno'];
-    const NUMERI = ['1','2','3','4','5'];
-    const DISTRIBUZIONE = ['1','1','1','2','2','3','3','4','4','5'];
-    let numeriOscurati = [];
-    let carte = [];
-    let carteResidue = {};
-    let historyStack = [];
-
-    function coloreClasse(c) {
-      return {
-        Gia: 'yellow',
-        Ros: 'red',
-        Blu: 'blue',
-        Ver: 'green',
-        Bia: 'white',
-        Arcobaleno: 'rainbow'
-      }[c] || '';
+    function inizia() {
+      const carte = document.querySelector('input[name="carte"]:checked').value;
+      const arcobaleno = document.getElementById('arcobaleno').checked ? 'on' : 'off';
+      const posizione = document.querySelector('input[name="posizione"]:checked').value;
+      window.location.href = `gioco.html?carte=${carte}&arcobaleno=${arcobaleno}&reset=${posizione}`;
     }
-
-    function inizializzaCarteResidue() {
-      COLORI.forEach(col => {
-        carteResidue[col] = DISTRIBUZIONE.map((n, idx) => ({
-          numero: n,
-          id: `${col}-${idx}`,
-          oscurata: false
-        }));
-      });
-    }
-
-    // Salva stato su localStorage
-    function saveState() {
-      const state = {
-        carte,
-        carteResidue,
-        numeriOscurati
-      };
-      localStorage.setItem('hanabiTrackerState', JSON.stringify(state));
-    }
-
-    // Carica stato da localStorage
-    function loadState() {
-      const saved = localStorage.getItem('hanabiTrackerState');
-      if (saved) {
-        try {
-          const state = JSON.parse(saved);
-          if (state.carte && state.carteResidue && state.numeriOscurati) {
-            carte = state.carte;
-            carteResidue = state.carteResidue;
-            numeriOscurati = state.numeriOscurati;
-            return true;
-          }
-        } catch(e) {
-          console.warn('Errore caricando stato', e);
-        }
-      }
-      return false;
-    }
-
-    // Salva lo stato precedente per undo
-    function pushHistory() {
-      // Deep clone per evitare riferimenti
-      const snapshot = {
-        carte: JSON.parse(JSON.stringify(carte)),
-        carteResidue: JSON.parse(JSON.stringify(carteResidue)),
-        numeriOscurati: JSON.parse(JSON.stringify(numeriOscurati))
-      };
-      historyStack.push(snapshot);
-      if (historyStack.length > 100) historyStack.shift(); // limitiamo la storia a 100
-    }
-
-    function undo() {
-      if (historyStack.length === 0) return;
-      const prev = historyStack.pop();
-      carte = prev.carte;
-      carteResidue = prev.carteResidue;
-      numeriOscurati = prev.numeriOscurati;
-      render();
-      saveState();
-    }
-
-function start(n) {
-  historyStack = [];
-  carte = Array(n).fill(0).map(() => ({
-    colore: [],
-    notColor: [],
-    numero: null,
-    notNumber: [],
-    selected: false
-  }));
-  inizializzaCarteResidue();
-  numeriOscurati = [];
-  render();
-  saveState();
-}
-
-    function toggleSelection(i) {
-      pushHistory();
-      carte[i].selected = !carte[i].selected;
-      render();
-      saveState();
-    }
-
-   function assegnaIndizioColore(colore) {
-  const almenoUnaSelezionata = carte.some(c => c.selected);
-  if (!almenoUnaSelezionata) return;
-
-  pushHistory();
-  carte.forEach((c) => {
-    if (c.selected) {
-      if (!c.colore.includes(colore)) c.colore.push(colore);
-    } else {
-      if (!c.notColor.includes(colore)) c.notColor.push(colore);
-    }
-    c.selected = false;
-  });
-  aggiornaArcobaleni();
-  render();
-  saveState();
-}
-
-
-   function assegnaIndizioNumero(numero) {
-  const almenoUnaSelezionata = carte.some(c => c.selected);
-  if (!almenoUnaSelezionata) return;
-
-  pushHistory();
-  carte.forEach((c) => {
-    if (c.selected) {
-      c.numero = numero;
-    } else {
-      if (!c.notNumber.includes(numero)) c.notNumber.push(numero);
-    }
-    c.selected = false;
-  });
-  render();
-  saveState();
-}
-
-    function aggiornaArcobaleni() {
-      carte.forEach(c => {
-        if (c.colore.length > 1) {
-          c.colore = ['Arcobaleno'];
-        }
-      });
-    }
-
-function resetCard(i) {
-  pushHistory();
-  const nuovaCarta = {
-    colore: [],
-    notColor: [],
-    numero: null,
-    notNumber: [],
-    selected: false
-  };
-  carte.splice(i, 1);             // Rimuove la carta cliccata
-  carte.unshift(nuovaCarta);      // Inserisce una nuova all’inizio
-  render();
-  saveState();
-}
-
-    function toggleResidua(colore, id) {
-      pushHistory();
-      const carta = carteResidue[colore].find(c => c.id === id);
-      if (carta) {
-        carta.oscurata = !carta.oscurata;
-        render();
-        saveState();
-      }
-    }
-
-function generaNegazioni() {
-  pushHistory();
-
-  carte.forEach(carta => {
-    // Caso 1: so il colore, non so il numero
-    if (carta.colore.length === 1 && carta.numero === null) {
-      const colore = carta.colore[0];
-      const residue = carteResidue[colore];
-      const presenti = new Set(residue.filter(c => !c.oscurata).map(c => c.numero));
-      NUMERI.forEach(n => {
-        if (!presenti.has(n) && !carta.notNumber.includes(n)) {
-          carta.notNumber.push(n);
-        }
-      });
-    }
-
-    // Caso 2: so il numero, non so il colore
-    if (carta.numero !== null && carta.colore.length === 0) {
-      COLORI.forEach(col => {
-        const residue = carteResidue[col];
-        const ancoraPresenti = residue.some(c => !c.oscurata && c.numero === carta.numero);
-        if (!ancoraPresenti && !carta.notColor.includes(col)) {
-          carta.notColor.push(col);
-        }
-      });
-    }
-  });
-
-  render();
-  saveState();
-}
-    function render() {
-      const cardsEl = document.getElementById('cards');
-      cardsEl.innerHTML = carte.map((c, i) => {
-        let content = '?';
-        let cls = '';
-        if (c.numero && c.colore.length) {
-          cls = coloreClasse(c.colore[0]);
-          content = `<span class="${cls}">${c.numero}</span>`;
-        } else if (c.numero) {
-          content = c.numero;
-        } else if (c.colore.length) {
-          cls = coloreClasse(c.colore[0]);
-          content = `<span class="${cls}">?</span>`;
-        }
-        const negColor = c.notColor.join(', ');
-        const negNumber = c.notNumber.join(', ');
-        return `
-          <div>
-            <div class="card${c.selected ? ' selected' : ''}" onclick="toggleSelection(${i})">
-              <button class="reset-button" onclick="event.stopPropagation(); resetCard(${i})">✕</button>
-              <div class="main">${content}</div>
-            </div>
-            <div class="indizi-negativi" style="text-align:center; margin-top: 4px; color: #ffffff;">
-              ${negColor ? '<span>Non: ' + negColor + '</span>' : ''}
-              ${negColor && negNumber ? '<br>' : ''}
-              ${negNumber ? '<span>≠: ' + negNumber + '</span>' : ''}
-            </div>
-          </div>`;
-      }).join('');
-
-      const colorControls = document.getElementById('color-controls');
-      colorControls.innerHTML = COLORI_INDIZI.map(c => `<button style="background:${coloreClasse(c)}" onclick="assegnaIndizioColore('${c}')">${c}</button>`).join('');
-
-      const numberControls = document.getElementById('number-controls');
-      numberControls.innerHTML = NUMERI.map(n => {
-        const isOff = numeriOscurati.includes(n);
-        return `<button onclick="assegnaIndizioNumero('${n}')" style="background:${isOff ? '#999' : '#ccc'}; opacity:${isOff ? 0.4 : 1}">${n}</button>`;
-      }).join('');
-
-      const residuiEl = document.getElementById('residue-tracker');
-      residuiEl.innerHTML = COLORI.map(col => {
-        const carteR = carteResidue[col] || [];
-        return `<div class="residue-row" data-colore="${col}">
-          <div class="residue-label"></div>
-          ${carteR.map(c => `
-            <div class="residue-button${c.oscurata ? ' oscurata' : ''}" onclick="toggleResidua('${col}', '${c.id}')">${c.numero}</div>
-          `).join('')}
-        </div>`;
-      }).join('');
-    }
-
-    // Avvio: tenta di caricare lo stato, altrimenti lascia tutto vuoto finché non premi 4 o 5 carte
-if (loadState()) {
-  render();
-}
   </script>
 </body>
 </html>
