@@ -1,4 +1,4 @@
-🎴 Hanabi Tracker
+🎴 Hanabi Tracker  29/07/2025
 Hanabi Tracker è uno strumento digitale pensato per aiutare i giocatori a tenere traccia delle proprie carte e delle informazioni ricevute durante una partita a Hanabi, specialmente in modalità competitiva o con regole avanzate.
 
 ⚙️ Funzionalità Principali
