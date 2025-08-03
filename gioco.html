@@ -171,6 +171,12 @@
 <button onclick="undo()">Undo</button>
       <button onclick="generaNegazioni()">Genera Negazioni</button>
     </div>
+<div style="text-align: center; margin-top: 1rem;">
+  <label style="color: white;">
+    <input type="checkbox" id="wakelock-toggle" />
+    Mantieni schermo attivo
+  </label>
+</div>
     <div class="cards" id="cards"></div>
     <div class="controls">
       <div class="control-row" id="color-controls"></div>
@@ -459,8 +465,59 @@ return `
       }).join('');
     }
 
-    start(numCarte);
-  </script>
+    if (!loadState()) {
+  start(numCarte); // solo se non c'è stato salvato
+} else {
+  render(); // ricostruisce la visualizzazione se stato esiste
+};
+  
+let wakeLock = null;
+
+async function attivaWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('🔒 Wake Lock attivo');
+      wakeLock.addEventListener('release', () => {
+        console.log('🔓 Wake Lock rilasciato');
+      });
+    } else {
+      console.warn('Wake Lock non supportato');
+    }
+  } catch (err) {
+    console.error(`${err.name}, ${err.message}`);
+  }
+}
+
+// Riattiva se torna visibile
+document.addEventListener('visibilitychange', () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    attivaWakeLock();
+  }
+});
+
+// Gestione checkbox e salvataggio preferenza
+const wakeLockToggle = document.getElementById('wakelock-toggle');
+
+// Ripristina preferenza da localStorage
+const savedPref = localStorage.getItem('hanabiWakeLock');
+if (savedPref === 'true') {
+  wakeLockToggle.checked = true;
+  attivaWakeLock();
+}
+
+// Salva ogni cambiamento dell’utente
+wakeLockToggle.addEventListener('change', async function () {
+  localStorage.setItem('hanabiWakeLock', this.checked ? 'true' : 'false');
+  if (this.checked) {
+    await attivaWakeLock();
+  } else if (wakeLock) {
+    await wakeLock.release();
+    wakeLock = null;
+    console.log('🔓 Wake Lock disattivato manualmente');
+  }
+});
+</script>
 	<div class="versione">1.1</div>
 </body>
 </html>
