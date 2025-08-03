@@ -171,12 +171,7 @@
 <button onclick="undo()">Undo</button>
       <button onclick="generaNegazioni()">Genera Negazioni</button>
     </div>
-<div style="text-align: center; margin-top: 1rem;">
-  <label style="color: white;">
-    <input type="checkbox" id="wakelock-toggle" />
-    Mantieni schermo attivo
-  </label>
-</div>
+
     <div class="cards" id="cards"></div>
     <div class="controls">
       <div class="control-row" id="color-controls"></div>
@@ -187,7 +182,12 @@
       <div id="residue-tracker"></div>
     </div>
   </div>
-
+<div style="text-align: center; margin-top: 1rem;">
+  <label style="color: white;">
+    <input type="checkbox" id="wakelock-toggle" />
+    Mantieni schermo attivo
+  </label>
+</div>
   <script>
     // PARAMETRI LETTI DA URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -521,3 +521,4 @@ wakeLockToggle.addEventListener('change', async function () {
 	<div class="versione">1.1</div>
 </body>
 </html>
+
