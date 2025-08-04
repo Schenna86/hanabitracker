@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hanabi Tracker</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #424242;
+      margin: 0;
+      padding: 1rem;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.75rem;
+    }
+    .card {
+      background: #7d7d7d;
+      border: 2px solid #ccc;
+      border-radius: 1rem;
+      padding: 0.75rem;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+      position: relative;
+    }
+    .card.selected {
+      border-color: #007bff;
+      box-shadow: 0 0 10px rgba(0,123,255,0.5);
+    }
+    .card .main {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+    .indizi-negativi {
+      font-size: 0.75rem;
+      margin-top: 0.3rem;
+      color: #ccc;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .control-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .controls button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      min-width: 60px;
+    }
+    .yellow { color: gold; }
+    .red { color: red; }
+    .blue { color: blue; }
+    .green { color: green; }
+    .white { color: white; }
+    .rainbow {
+      background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold;
+    }
+    .reset-button {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      padding: 2px 5px;
+    }
+    .residue-section {
+      align-items: center;
+      margin-top: 2rem;
+    }
+    .residue-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+    .residue-label {
+      visibility: hidden;
+      width: 0;
+      margin: 0;
+      padding: 0;
+    }
+    .residue-button {
+      padding: 0.3rem 0.6rem;
+      border-radius: 5px;
+      background: #ccc;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      min-width: 28px;
+      text-align: center;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    .residue-button.oscurata {
+      background: #333;
+      color: white;
+      opacity: 0.4;
+    }
+    .residue-row[data-colore="Gia"] .residue-button { color: gold; }
+    .residue-row[data-colore="Ros"] .residue-button { color: red; }
+    .residue-row[data-colore="Blu"] .residue-button { color: blue; }
+    .residue-row[data-colore="Ver"] .residue-button { color: green; }
+    .residue-row[data-colore="Bia"] .residue-button { color: white; }
+    .residue-row[data-colore="Arcobaleno"] .residue-button {
+	background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold}
+
+    @media (max-width: 600px) {
+      body {
+        padding: 0.5rem;
+      }
+      .card {
+        padding: 0.5rem;
+      }
+      .card .main {
+        font-size: 1.5rem;
+      }
+      .controls button {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+        min-width: 50px;
+      }
+      .reset-button {
+        font-size: 0.6rem;
+      }
+    }
+.versione {
+  position: fixed;
+  bottom: 10px;
+  right: 15px;
+  font-size: 0.85rem;
+  color: #aaa;
+  opacity: 0.7;
+}
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Hanabi Tracker</h1>
+<button onclick="tornaAllaHome()">Torna alla Home</button>      
+<button onclick="undo()">Undo</button>
+      <button onclick="generaNegazioni()">Genera Negazioni</button>
+    </div>
+
+    <div class="cards" id="cards"></div>
+    <div class="controls">
+      <div class="control-row" id="color-controls"></div>
+      <div class="control-row" id="number-controls"></div>
+    </div>
+    <div class="residue-section">
+      <h2>Carte Residue</h2>
+      <div id="residue-tracker"></div>
+    </div>
+  </div>
+<div style="text-align: center; margin-top: 1rem;">
+  <label style="color: white;">
+    <input type="checkbox" id="wakelock-toggle" />
+    Mantieni schermo attivo
+  </label>
+</div>
+  <script>
+    // PARAMETRI LETTI DA URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const numCarte = parseInt(urlParams.get("carte")) || 4;
+    const arcobalenoAttivo = ["on", "true", "1"].includes(urlParams.get("arcobaleno"));
+	const resetMode = urlParams.get("reset") || "sinistra"; // "sinistra", "destra", "sostituisci"
+
+    const COLORI_INDIZI = ['Gia', 'Ros', 'Blu', 'Ver', 'Bia'];
+    const COLORI = arcobalenoAttivo ? [...COLORI_INDIZI, 'Arcobaleno'] : [...COLORI_INDIZI];
+    const NUMERI = ['1','2','3','4','5'];
+    const DISTRIBUZIONE = ['1','1','1','2','2','3','3','4','4','5'];
+    let numeriOscurati = [];
+    let carte = [];
+    let carteResidue = {};
+    let historyStack = [];
+
+    function coloreClasse(c) {
+      return {
+        Gia: 'yellow', Ros: 'red', Blu: 'blue', Ver: 'green', Bia: 'white', Arcobaleno: 'rainbow'
+      }[c] || '';
+    }
+
+    function inizializzaCarteResidue() {
+      COLORI.forEach(col => {
+        carteResidue[col] = DISTRIBUZIONE.map((n, idx) => ({
+          numero: n, id: `${col}-${idx}`, oscurata: false
+        }));
+      });
+    }
+
+    function saveState() {
+      const state = { carte, carteResidue, numeriOscurati };
+      localStorage.setItem('hanabiTrackerState', JSON.stringify(state));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem('hanabiTrackerState');
+      if (saved) {
+        try {
+          const state = JSON.parse(saved);
+          if (state.carte && state.carteResidue && state.numeriOscurati) {
+            carte = state.carte;
+            carteResidue = state.carteResidue;
+            numeriOscurati = state.numeriOscurati;
+            return true;
+          }
+        } catch (e) {
+          console.warn("Errore caricando stato", e);
+        }
+      }
+      return false;
+    }
+
+    function pushHistory() {
+      const snapshot = {
+        carte: JSON.parse(JSON.stringify(carte)),
+        carteResidue: JSON.parse(JSON.stringify(carteResidue)),
+        numeriOscurati: JSON.parse(JSON.stringify(numeriOscurati))
+      };
+      historyStack.push(snapshot);
+      if (historyStack.length > 100) historyStack.shift();
+    }
+
+    function undo() {
+      if (!historyStack.length) return;
+      const prev = historyStack.pop();
+      carte = prev.carte;
+      carteResidue = prev.carteResidue;
+      numeriOscurati = prev.numeriOscurati;
+      render();
+      saveState();
+    }
+
+    function start(n) {
+      historyStack = [];
+      carte = Array(n).fill(0).map(() => ({
+  colore: [],
+  notColor: [],
+  numero: null,
+  notNumber: [],
+  notColorAuto: [],
+  notNumberAuto: [],
+  selected: false
+}));
+      inizializzaCarteResidue();
+      numeriOscurati = [];
+      render();
+      saveState();
+    }
+
+    function toggleSelection(i) {
+      pushHistory();
+      carte[i].selected = !carte[i].selected;
+      render();
+      saveState();
+    }
+
+   function assegnaIndizioColore(colore) {
+  if (!carte.some(c => c.selected)) return;
+  pushHistory();
+
+  const selezionate = carte.filter(c => c.selected);
+  const altre = carte.filter(c => !c.selected);
+
+  selezionate.forEach(c => {
+    if (!c.colore.includes(colore)) c.colore.push(colore);
+  });
+
+  altre.forEach(c => {
+    if (!c.notColor.includes(colore)) c.notColor.push(colore);
+    if (!c.notColor.includes('Arcobaleno')) c.notColor.push('Arcobaleno');
+  });
+
+  carte.forEach(c => c.selected = false);
+  aggiornaArcobaleni();
+  render();
+  saveState();
+}
+
+
+
+
+    function assegnaIndizioNumero(numero) {
+      if (!carte.some(c => c.selected)) return;
+      pushHistory();
+      carte.forEach((c) => {
+        if (c.selected) {
+          c.numero = numero;
+        } else {
+          if (!c.notNumber.includes(numero)) c.notNumber.push(numero);
+        }
+        c.selected = false;
+      });
+      render();
+      saveState();
+    }
+
+    function aggiornaArcobaleni() {
+      if (!arcobalenoAttivo) return;
+      carte.forEach(c => {
+        if (c.colore.length > 1) c.colore = ['Arcobaleno'];
+      });
+    }
+
+    function resetCard(i) {
+      pushHistory();
+      const nuovaCarta = {
+        colore: [], notColor: [], numero: null, notNumber: [], selected: false
+      };
+      if (resetMode === "sinistra") {
+        carte.splice(i, 1);
+        carte.unshift(nuovaCarta);
+      } else if (resetMode === "destra") {
+        carte.splice(i, 1);
+        carte.push(nuovaCarta);
+      } else {
+        carte[i] = nuovaCarta;
+      }
+      render();
+      saveState();
+    }
+
+    function toggleResidua(colore, id) {
+  const carta = carteResidue[colore].find(c => c.id === id);
+  if (carta) {
+    carta.oscurata = !carta.oscurata;
+    render();
+    saveState();
+  }
+}
+
+function tornaAllaHome() {
+  if (!confirm("Vuoi davvero tornare alla Home? ATTENZIONE: perderai tutti i dati salvati. Confermi?")) return;
+ 
+  localStorage.removeItem('hanabiTrackerState'); // Reset localStorage
+  window.location.href = "index.html"; // Torna alla home (modifica se il nome è diverso)
+}
+
+    function generaNegazioni() {
+  pushHistory();
+
+  carte.forEach(carta => {
+    // Resetta le vecchie auto-negazioni
+    carta.notColorAuto = [];
+    carta.notNumberAuto = [];
+
+    // Caso 1: so il colore, non so il numero
+    if (carta.colore.length === 1 && carta.numero === null) {
+      const colore = carta.colore[0];
+      const residue = carteResidue[colore];
+      const presenti = new Set(residue.filter(c => !c.oscurata).map(c => c.numero));
+      NUMERI.forEach(n => {
+        if (!presenti.has(n)) {
+          carta.notNumberAuto.push(n);
+        }
+      });
+    }
+
+    // Caso 2: so il numero, non so il colore
+    if (carta.numero !== null && carta.colore.length === 0) {
+      COLORI.forEach(col => {
+        const residue = carteResidue[col];
+        const ancoraPresenti = residue.some(c => !c.oscurata && c.numero === carta.numero);
+        if (!ancoraPresenti) {
+          carta.notColorAuto.push(col);
+        }
+      });
+    }
+  });
+
+  render();
+  saveState();
+}
+
+    function render() {
+      const cardsEl = document.getElementById('cards');
+      cardsEl.innerHTML = carte.map((c, i) => {
+        let content = '?';
+        let cls = '';
+        if (c.numero && c.colore.length) {
+          cls = coloreClasse(c.colore[0]);
+          content = `<span class="${cls}">${c.numero}</span>`;
+        } else if (c.numero) {
+          content = c.numero;
+        } else if (c.colore.length) {
+          cls = coloreClasse(c.colore[0]);
+          content = `<span class="${cls}">?</span>`;
+        }
+       const negColor = c.notColor.join(', ');
+const negColorAuto = c.notColorAuto?.join(', ') || '';
+const negNumber = c.notNumber.join(', ');
+const negNumberAuto = c.notNumberAuto?.join(', ') || '';
+
+return `
+  <div>
+    <div class="card${c.selected ? ' selected' : ''}" onclick="toggleSelection(${i})">
+      <button class="reset-button" onclick="event.stopPropagation(); resetCard(${i})">✕</button>
+      <div class="main">${content}</div>
+    </div>
+    <div class="indizi-negativi" style="text-align:center; margin-top: 4px; color: #ffffff;">
+      ${negColor ? '<span>Non: ' + negColor + '</span>' : ''}
+      ${negColor && negNumber ? '<br>' : ''}
+      ${negNumber ? '<span>≠: ' + negNumber + '</span>' : ''}
+      ${(negColorAuto || negNumberAuto) ? '<br>' : ''}
+      ${negColorAuto ? '<span style="opacity: 0.6">Auto Non: ' + negColorAuto + '</span>' : ''}
+      ${negColorAuto && negNumberAuto ? '<br>' : ''}
+      ${negNumberAuto ? '<span style="opacity: 0.6">Auto ≠: ' + negNumberAuto + '</span>' : ''}
+    </div>
+  </div>
+`;
+
+      }).join('');
+
+      document.getElementById('color-controls').innerHTML = COLORI_INDIZI.map(c =>
+        `<button style="background:${coloreClasse(c)}" onclick="assegnaIndizioColore('${c}')">${c}</button>`).join('');
+
+      document.getElementById('number-controls').innerHTML = NUMERI.map(n => {
+        const isOff = numeriOscurati.includes(n);
+        return `<button onclick="assegnaIndizioNumero('${n}')" style="background:${isOff ? '#999' : '#ccc'}; opacity:${isOff ? 0.4 : 1}">${n}</button>`;
+      }).join('');
+
+      const residuiEl = document.getElementById('residue-tracker');
+      residuiEl.innerHTML = COLORI.map(col => {
+        const carteR = carteResidue[col] || [];
+        return `<div class="residue-row" data-colore="${col}">
+          <div class="residue-label"></div>
+          ${carteR.map(c => `
+            <div class="residue-button${c.oscurata ? ' oscurata' : ''}" onclick="toggleResidua('${col}', '${c.id}')">${c.numero}</div>
+          `).join('')}
+        </div>`;
+      }).join('');
+    }
+
+    if (!loadState()) {
+  start(numCarte); // solo se non c'è stato salvato
+} else {
+  render(); // ricostruisce la visualizzazione se stato esiste
+};
+  
+let wakeLock = null;
+
+async function attivaWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('🔒 Wake Lock attivo');
+      wakeLock.addEventListener('release', () => {
+        console.log('🔓 Wake Lock rilasciato');
+      });
+    } else {
+      console.warn('Wake Lock non supportato');
+    }
+  } catch (err) {
+    console.error(`${err.name}, ${err.message}`);
+  }
+}
+
+// Riattiva se torna visibile
+document.addEventListener('visibilitychange', () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    attivaWakeLock();
+  }
+});
+
+// Gestione checkbox e salvataggio preferenza
+const wakeLockToggle = document.getElementById('wakelock-toggle');
+
+// Ripristina preferenza da localStorage
+const savedPref = localStorage.getItem('hanabiWakeLock');
+if (savedPref === 'true') {
+  wakeLockToggle.checked = true;
+  attivaWakeLock();
+}
+
+// Salva ogni cambiamento dell’utente
+wakeLockToggle.addEventListener('change', async function () {
+  localStorage.setItem('hanabiWakeLock', this.checked ? 'true' : 'false');
+  if (this.checked) {
+    await attivaWakeLock();
+  } else if (wakeLock) {
+    await wakeLock.release();
+    wakeLock = null;
+    console.log('🔓 Wake Lock disattivato manualmente');
+  }
+});
+</script>
+	<div class="versione">1.2</div>
+</body>
+</html>
+
