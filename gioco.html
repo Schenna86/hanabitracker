@@ -285,31 +285,28 @@
       saveState();
     }
 
-    function assegnaIndizioColore(colore) {
-  const selezionate = carte.filter(c => c.selected);
-  if (selezionate.length === 0) return;
+     function assegnaIndizioColore(colore) {
+  if (!carte.some(c => c.selected)) return;
   pushHistory();
 
-  const singolaCarta = selezionate.length === 1;
+  const selezionate = carte.filter(c => c.selected);
+  const altre = carte.filter(c => !c.selected);
 
-  carte.forEach((c) => {
-    if (c.selected) {
-      if (!c.colore.includes(colore)) c.colore.push(colore);
-    } else {
-      if (!c.notColor.includes(colore)) c.notColor.push(colore);
-
-      // ARC: se è attivo e solo una carta è selezionata, le altre non possono essere Arcobaleno
-      if (arcobalenoAttivo && singolaCarta && !c.notColor.includes('Arcobaleno')) {
-        c.notColor.push('Arcobaleno');
-      }
-    }
-    c.selected = false;
+  selezionate.forEach(c => {
+    if (!c.colore.includes(colore)) c.colore.push(colore);
   });
 
+  altre.forEach(c => {
+    if (!c.notColor.includes(colore)) c.notColor.push(colore);
+    if (!c.notColor.includes('Arcobaleno')) c.notColor.push('Arcobaleno');
+  });
+
+  carte.forEach(c => c.selected = false);
   aggiornaArcobaleni();
   render();
   saveState();
 }
+
 
 
 
@@ -521,5 +518,6 @@ wakeLockToggle.addEventListener('change', async function () {
 	<div class="versione">1.2</div>
 </body>
 </html>
+
 
 
