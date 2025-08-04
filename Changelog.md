@@ -1,68 +1,101 @@
-1.3
-Pallini colorati e numeri sotto ogni carta
+🟢 1.3 04/08/2025
+🔴 Pallini colorati e numeri sotto ogni carta
 Ogni carta ora mostra:
-Una riga di pallini che rappresentano i colori possibili (Rosso, Giallo, Blu, Verde, Bianco, Arcobaleno).
+
+Una riga di pallini colorati (Rosso, Giallo, Blu, Verde, Bianco, Arcobaleno).
+
 Una riga di numeri da 1 a 5.
-Questi indicatori si “spengono” (con opacità bassa) quando ricevono una negazione.
+🔸 Gli indicatori si “spengono” (opacità ridotta) quando ricevono una negazione.
 
-Correzione bug minori
+🛠️ Correzione bug minori
+🔵 1.2 03/08/2025
+🌙 Wake Lock: lo schermo resta attivo su mobile, con flag dedicato e salvataggio della preferenza in localStorage.
 
-1.2
-Wake Lock: lo schermo resta attivo su mobile, con flag dedicato e salvataggio preferenza in localStorage.
-Persistenza dati: lo stato del gioco resta salvato anche dopo il refresh della pagina.
-Larghezza minima delle carte ridotta da 140px a 120px per una migliore compatibilità con dispositivi mobili.
+💾 Persistenza dati: lo stato del gioco resta salvato anche dopo il refresh della pagina.
 
-1.1
-30/07/2025
-🔧 Funzionalità nuove e miglioramenti:
-Separazione delle negazioni automatiche generate dal pulsante "Genera Negazioni":
-Ora notColorAuto e notNumberAuto vengono visualizzate separatamente sotto ogni carta con un'opacità ridotta.
-Gestione della logica colore/arcobaleno migliorata:
-Quando si selezionano più carte e si dà un indizio di colore, le carte selezionate potranno essere di quel colore o arcobaleno.
-Le carte non selezionate ricevono una negazione sia del colore indicato che dell’arcobaleno.
-Se viene selezionata una sola carta, le altre ricevono la negazione sia del colore indicato che dell’arcobaleno, perché l’arcobaleno non può essere segnalato con un solo indizio.
-Esclusione del tracciamento delle carte residue nello storico (Undo):
-Ora cliccare sulle carte residue non viene più registrato nello stack di undo, così da non inquinare la cronologia delle modifiche reali.
+📱 Ottimizzazione mobile: larghezza minima delle carte ridotta da 140px a 120px.
 
-💡 Miglioramenti UX:
-Prevenzione indizi inutili:
-Il sistema blocca l’assegnazione di indizi colore/numero se nessuna carta è selezionata.
+🟡 1.1 — 30/07/2025
+🔧 Funzionalità nuove e miglioramenti
+✳️ Negazioni automatiche separate:
+Le negazioni da "Genera Negazioni" ora compaiono sotto forma di notColorAuto e notNumberAuto sotto ogni carta, con opacità ridotta.
 
-Modalità Arcobaleno gestita dinamicamente via URL:
-Se disattivata, il colore arcobaleno viene escluso anche nei casi di doppio colore.
-Nuova logica per il reset delle carte:
-La modalità di reset può essere sinistra, destra, o sostituisci, impostata tramite parametro URL.
-Pulsante “Torna alla Home” con doppia conferma:
-Previene il ritorno accidentale e il reset dello stato salvato.
+🌈 Gestione migliorata colore/arcobaleno:
 
-1.0
-🎴 Hanabi Tracker 29/07/2025 Hanabi Tracker è uno strumento digitale pensato per aiutare i giocatori a tenere traccia delle proprie carte e delle informazioni ricevute durante una partita a Hanabi, specialmente in modalità competitiva o con regole avanzate.
-⚙️ Funzionalità Principali 🔢 Gestione delle carte in mano Possibilità di scegliere una mano da 4 o 5 carte.
-Le carte possono essere selezionate toccandole o cliccandole.
-Ogni carta mostra:
-Numero noto o colore noto
-Indizi negativi (numeri e colori esclusi)
+Se selezioni più carte, le carte selezionate possono essere del colore indicato o Arcobaleno.
 
-🎨 Indizi I pulsanti colorati assegnano indizi di colore:
+Le altre ricevono negazioni sia del colore che dell’Arcobaleno.
 
-Seeziona le carte a cui si applica → clicca sul colore.
-I pulsanti numerici assegnano indizi di numero:
-Seleziona le carte a cui si applica → clicca sul numero.
-Se nessuna carta è selezionata, nessun indizio viene applicato.
+Se selezioni una sola carta, tutte le altre ricevono negazioni complete, perché non è possibile indicare l’Arcobaleno con un solo indizio.
 
-🚫 Negazioni automatiche Il pulsante "Genera Negazioni" esclude automaticamente:
-I numeri non più presenti per un colore noto.
-I colori non più disponibili per un numero noto.
+🔄 Esclusione delle carte residue dallo storico (Undo):
+
+I click sulle carte residue non inquinano più lo stack di undo.
+
+💡 Miglioramenti UX
+❌ Prevenzione indizi inutili:
+Blocca l’assegnazione di indizi se nessuna carta è selezionata.
+
+🌐 Modalità Arcobaleno da URL:
+Se disattivata via URL, il colore Arcobaleno viene completamente escluso.
+
+🔁 Nuove modalità di reset delle carte:
+
+sinistra, destra o sostituisci → impostabile da URL.
+
+🏠 Pulsante "Torna alla Home":
+
+Ora con doppia conferma, per evitare reset accidentali.
+
+🔴 1.0 — 29/07/2025
+🎴 Hanabi Tracker
+Strumento digitale per aiutare i giocatori a tenere traccia delle proprie carte e delle informazioni ricevute durante una partita a Hanabi (competitivo o avanzato).
+
+⚙️ Funzionalità Principali
+🔢 Gestione mano:
+
+Scegli tra 4 o 5 carte.
+
+Clicca per selezionare una carta.
+
+Visualizza numero/colore noti e negazioni.
+
+🎨 Indizi:
+
+Seleziona carte → clicca un colore o numero per assegnare l'indizio.
+
+Nessuna carta selezionata = nessun indizio applicato.
+
+🚫 Negazioni automatiche:
+
+Il pulsante "Genera Negazioni" esclude:
+
+Numeri non più presenti per un colore noto.
+
+Colori non più disponibili per un numero noto.
+
 Funziona in base alle carte residue oscurate.
 
-♻️ Reset e sostituzione carte Ogni carta ha un pulsante ✕ per essere resettata.
-Quando una carta viene resettata:
-Viene rimossa.
-Una nuova carta vuota viene inserita in fondo, mantenendo sempre 4 o 5 carte.
-🧠 Undo Il pulsante Undo permette di annullare l’ultima azione (fino a 100 passaggi).
-🃏 Carte Residue Rappresentazione visuale delle carte ancora disponibili nel mazzo.
-Ogni carta può essere oscurata (clic) per simulare che sia uscita.
-Supporta anche il colore Arcobaleno, con visualizzazione a gradiente.
+♻️ Reset e sostituzione carte:
 
-💾 Salvataggio automatico Lo stato della partita viene salvato automaticamente in localStorage.
-Puoi chiudere e riaprire il browser senza perdere nulla.
+Pulsante ✕ per rimuovere una carta.
+
+Viene inserita una nuova carta vuota mantenendo la mano completa.
+
+🧠 Undo:
+
+Annulla l’ultima azione (fino a 100 passaggi).
+
+🃏 Carte Residue:
+
+Visualizza le carte disponibili nel mazzo.
+
+Clic per oscurare → simula l’uscita dal gioco.
+
+Supporto per Arcobaleno (gradiente).
+
+💾 Salvataggio automatico:
+
+Tutto lo stato viene salvato in localStorage.
+
+Puoi chiudere e riaprire la pagina senza perdere nulla.
