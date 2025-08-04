@@ -160,10 +160,49 @@
   color: #aaa;
   opacity: 0.7;
 }
-  </style>
+.card-hints {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.85rem;
+}
 
+.color-dots, .number-hints {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  opacity: 1;
+}
+
+.color-dot.oscurato, .number-hint.oscurato {
+  opacity: 0.01;
+  filter: grayscale(100%);
+}
+
+.number-hint {
+  font-weight: bold;
+  color: white;
+  opacity: 1;
+}
+.color-dot.yellow { background: gold; }
+.color-dot.red { background: red; }
+.color-dot.blue { background: blue; }
+.color-dot.green { background: green; }
+.color-dot.white { background: white; border: 1px solid #ccc; }
+.color-dot.rainbow {
+  background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
+}
+  </style>
 </head>
 <body>
+
+
   <div class="container">
     <div class="header">
       <h1>Hanabi Tracker</h1>
@@ -189,103 +228,90 @@
   </label>
 </div>
   <script>
-    // PARAMETRI LETTI DA URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const numCarte = parseInt(urlParams.get("carte")) || 4;
-    const arcobalenoAttivo = ["on", "true", "1"].includes(urlParams.get("arcobaleno"));
-	const resetMode = urlParams.get("reset") || "sinistra"; // "sinistra", "destra", "sostituisci"
+const urlParams = new URLSearchParams(window.location.search);
+const numCarte = parseInt(urlParams.get("carte")) || 4;
+const arcobalenoAttivo = ["on", "true", "1"].includes(urlParams.get("arcobaleno"));
+const resetMode = urlParams.get("reset") || "sinistra";
 
-    const COLORI_INDIZI = ['Gia', 'Ros', 'Blu', 'Ver', 'Bia'];
-    const COLORI = arcobalenoAttivo ? [...COLORI_INDIZI, 'Arcobaleno'] : [...COLORI_INDIZI];
-    const NUMERI = ['1','2','3','4','5'];
-    const DISTRIBUZIONE = ['1','1','1','2','2','3','3','4','4','5'];
-    let numeriOscurati = [];
-    let carte = [];
-    let carteResidue = {};
-    let historyStack = [];
+const COLORI_INDIZI = ['Gia', 'Ros', 'Blu', 'Ver', 'Bia'];
+const COLORI = arcobalenoAttivo ? [...COLORI_INDIZI, 'Arcobaleno'] : [...COLORI_INDIZI];
+const NUMERI = ['1','2','3','4','5'];
+const DISTRIBUZIONE = ['1','1','1','2','2','3','3','4','4','5'];
 
-    function coloreClasse(c) {
-      return {
-        Gia: 'yellow', Ros: 'red', Blu: 'blue', Ver: 'green', Bia: 'white', Arcobaleno: 'rainbow'
-      }[c] || '';
-    }
+let carte = [];
+let carteResidue = {};
+let numeriOscurati = [];
+let historyStack = [];
 
-    function inizializzaCarteResidue() {
-      COLORI.forEach(col => {
-        carteResidue[col] = DISTRIBUZIONE.map((n, idx) => ({
-          numero: n, id: `${col}-${idx}`, oscurata: false
-        }));
-      });
-    }
+function coloreClasse(c) {
+  return {
+    Gia: 'yellow', Ros: 'red', Blu: 'blue',
+    Ver: 'green', Bia: 'white', Arcobaleno: 'rainbow'
+  }[c] || '';
+}
 
-    function saveState() {
-      const state = { carte, carteResidue, numeriOscurati };
-      localStorage.setItem('hanabiTrackerState', JSON.stringify(state));
-    }
+function inizializzaCarteResidue() {
+  COLORI.forEach(col => {
+    carteResidue[col] = DISTRIBUZIONE.map((n, idx) => ({
+      numero: n, id: `${col}-${idx}`, oscurata: false
+    }));
+  });
+}
 
-    function loadState() {
-      const saved = localStorage.getItem('hanabiTrackerState');
-      if (saved) {
-        try {
-          const state = JSON.parse(saved);
-          if (state.carte && state.carteResidue && state.numeriOscurati) {
-            carte = state.carte;
-            carteResidue = state.carteResidue;
-            numeriOscurati = state.numeriOscurati;
-            return true;
-          }
-        } catch (e) {
-          console.warn("Errore caricando stato", e);
-        }
-      }
-      return false;
-    }
+function pushHistory() {
+  historyStack.push(JSON.parse(JSON.stringify({ carte, carteResidue, numeriOscurati })));
+  if (historyStack.length > 100) historyStack.shift();
+}
 
-    function pushHistory() {
-      const snapshot = {
-        carte: JSON.parse(JSON.stringify(carte)),
-        carteResidue: JSON.parse(JSON.stringify(carteResidue)),
-        numeriOscurati: JSON.parse(JSON.stringify(numeriOscurati))
-      };
-      historyStack.push(snapshot);
-      if (historyStack.length > 100) historyStack.shift();
-    }
+function undo() {
+  if (!historyStack.length) return;
+  const prev = historyStack.pop();
+  carte = prev.carte;
+  carteResidue = prev.carteResidue;
+  numeriOscurati = prev.numeriOscurati;
+  render();
+  saveState();
+}
 
-    function undo() {
-      if (!historyStack.length) return;
-      const prev = historyStack.pop();
-      carte = prev.carte;
-      carteResidue = prev.carteResidue;
-      numeriOscurati = prev.numeriOscurati;
-      render();
-      saveState();
-    }
+function saveState() {
+  const state = { carte, carteResidue, numeriOscurati };
+  localStorage.setItem('hanabiTrackerState', JSON.stringify(state));
+}
 
-    function start(n) {
-      historyStack = [];
-      carte = Array(n).fill(0).map(() => ({
-  colore: [],
-  notColor: [],
-  numero: null,
-  notNumber: [],
-  notColorAuto: [],
-  notNumberAuto: [],
-  selected: false
-}));
-      inizializzaCarteResidue();
-      numeriOscurati = [];
-      render();
-      saveState();
-    }
+function loadState() {
+  const saved = localStorage.getItem('hanabiTrackerState');
+  if (saved) {
+    try {
+      const state = JSON.parse(saved);
+      carte = state.carte;
+      carteResidue = state.carteResidue;
+      numeriOscurati = state.numeriOscurati;
+      return true;
+    } catch {}
+  }
+  return false;
+}
 
-    function toggleSelection(i) {
-      pushHistory();
-      carte[i].selected = !carte[i].selected;
-      render();
-      saveState();
-    }
+function start(n) {
+  historyStack = [];
+  carte = Array(n).fill(0).map(() => ({
+    colore: [], notColor: [], numero: null, notNumber: [],
+    notColorAuto: [], notNumberAuto: [], selected: false
+  }));
+  inizializzaCarteResidue();
+  numeriOscurati = [];
+  render();
+  saveState();
+}
 
-     function assegnaIndizioColore(colore) {
+function toggleSelection(i) {
+  pushHistory();
+  carte[i].selected = !carte[i].selected;
+  render();
+  saveState();
+}
+
+function assegnaIndizioColore(colore) {
   if (!carte.some(c => c.selected)) return;
   pushHistory();
 
@@ -307,51 +333,48 @@
   saveState();
 }
 
-
-
-
-
-    function assegnaIndizioNumero(numero) {
-      if (!carte.some(c => c.selected)) return;
-      pushHistory();
-      carte.forEach((c) => {
-        if (c.selected) {
-          c.numero = numero;
-        } else {
-          if (!c.notNumber.includes(numero)) c.notNumber.push(numero);
-        }
-        c.selected = false;
-      });
-      render();
-      saveState();
+function assegnaIndizioNumero(numero) {
+  if (!carte.some(c => c.selected)) return;
+  pushHistory();
+  carte.forEach(c => {
+    if (c.selected) {
+      c.numero = numero;
+    } else {
+      if (!c.notNumber.includes(numero)) c.notNumber.push(numero);
     }
+    c.selected = false;
+  });
+  render();
+  saveState();
+}
 
-    function aggiornaArcobaleni() {
-      if (!arcobalenoAttivo) return;
-      carte.forEach(c => {
-        if (c.colore.length > 1) c.colore = ['Arcobaleno'];
-      });
-    }
+function aggiornaArcobaleni() {
+  if (!arcobalenoAttivo) return;
+  carte.forEach(c => {
+    if (c.colore.length > 1) c.colore = ['Arcobaleno'];
+  });
+}
 
-    function resetCard(i) {
-      pushHistory();
-      const nuovaCarta = {
-        colore: [], notColor: [], numero: null, notNumber: [], selected: false
-      };
-      if (resetMode === "sinistra") {
-        carte.splice(i, 1);
-        carte.unshift(nuovaCarta);
-      } else if (resetMode === "destra") {
-        carte.splice(i, 1);
-        carte.push(nuovaCarta);
-      } else {
-        carte[i] = nuovaCarta;
-      }
-      render();
-      saveState();
-    }
+function resetCard(i) {
+  pushHistory();
+  const nuovaCarta = {
+    colore: [], notColor: [], numero: null, notNumber: [],
+    notColorAuto: [], notNumberAuto: [], selected: false
+  };
+  if (resetMode === "sinistra") {
+    carte.splice(i, 1);
+    carte.unshift(nuovaCarta);
+  } else if (resetMode === "destra") {
+    carte.splice(i, 1);
+    carte.push(nuovaCarta);
+  } else {
+    carte[i] = nuovaCarta;
+  }
+  render();
+  saveState();
+}
 
-    function toggleResidua(colore, id) {
+function toggleResidua(colore, id) {
   const carta = carteResidue[colore].find(c => c.id === id);
   if (carta) {
     carta.oscurata = !carta.oscurata;
@@ -361,164 +384,142 @@
 }
 
 function tornaAllaHome() {
-  if (!confirm("Vuoi davvero tornare alla Home? ATTENZIONE: perderai tutti i dati salvati. Confermi?")) return;
- 
-  localStorage.removeItem('hanabiTrackerState'); // Reset localStorage
-  window.location.href = "index.html"; // Torna alla home (modifica se il nome è diverso)
+  if (confirm("Vuoi davvero tornare alla Home? ATTENZIONE: perderai tutti i dati salvati.")) {
+    localStorage.removeItem('hanabiTrackerState');
+    window.location.href = "index.html";
+  }
 }
 
-    function generaNegazioni() {
+function generaNegazioni() {
   pushHistory();
+  carte.forEach(c => {
+    c.notColorAuto = [];
+    c.notNumberAuto = [];
 
-  carte.forEach(carta => {
-    // Resetta le vecchie auto-negazioni
-    carta.notColorAuto = [];
-    carta.notNumberAuto = [];
-
-    // Caso 1: so il colore, non so il numero
-    if (carta.colore.length === 1 && carta.numero === null) {
-      const colore = carta.colore[0];
-      const residue = carteResidue[colore];
-      const presenti = new Set(residue.filter(c => !c.oscurata).map(c => c.numero));
+    if (c.colore.length === 1 && c.numero === null) {
+      const presenti = new Set(carteResidue[c.colore[0]].filter(r => !r.oscurata).map(r => r.numero));
       NUMERI.forEach(n => {
-        if (!presenti.has(n)) {
-          carta.notNumberAuto.push(n);
-        }
+        if (!presenti.has(n)) c.notNumberAuto.push(n);
       });
     }
 
-    // Caso 2: so il numero, non so il colore
-    if (carta.numero !== null && carta.colore.length === 0) {
+    if (c.numero !== null && c.colore.length === 0) {
       COLORI.forEach(col => {
-        const residue = carteResidue[col];
-        const ancoraPresenti = residue.some(c => !c.oscurata && c.numero === carta.numero);
-        if (!ancoraPresenti) {
-          carta.notColorAuto.push(col);
-        }
+        const match = carteResidue[col].some(r => !r.oscurata && r.numero === c.numero);
+        if (!match) c.notColorAuto.push(col);
       });
     }
   });
-
   render();
   saveState();
 }
 
-    function render() {
-      const cardsEl = document.getElementById('cards');
-      cardsEl.innerHTML = carte.map((c, i) => {
-        let content = '?';
-        let cls = '';
-        if (c.numero && c.colore.length) {
-          cls = coloreClasse(c.colore[0]);
-          content = `<span class="${cls}">${c.numero}</span>`;
-        } else if (c.numero) {
-          content = c.numero;
-        } else if (c.colore.length) {
-          cls = coloreClasse(c.colore[0]);
-          content = `<span class="${cls}">?</span>`;
-        }
-       const negColor = c.notColor.join(', ');
-const negColorAuto = c.notColorAuto?.join(', ') || '';
-const negNumber = c.notNumber.join(', ');
-const negNumberAuto = c.notNumberAuto?.join(', ') || '';
-
-return `
-  <div>
-    <div class="card${c.selected ? ' selected' : ''}" onclick="toggleSelection(${i})">
-      <button class="reset-button" onclick="event.stopPropagation(); resetCard(${i})">✕</button>
-      <div class="main">${content}</div>
-    </div>
-    <div class="indizi-negativi" style="text-align:center; margin-top: 4px; color: #ffffff;">
-      ${negColor ? '<span>Non: ' + negColor + '</span>' : ''}
-      ${negColor && negNumber ? '<br>' : ''}
-      ${negNumber ? '<span>≠: ' + negNumber + '</span>' : ''}
-      ${(negColorAuto || negNumberAuto) ? '<br>' : ''}
-      ${negColorAuto ? '<span style="opacity: 0.6">Auto Non: ' + negColorAuto + '</span>' : ''}
-      ${negColorAuto && negNumberAuto ? '<br>' : ''}
-      ${negNumberAuto ? '<span style="opacity: 0.6">Auto ≠: ' + negNumberAuto + '</span>' : ''}
-    </div>
-  </div>
-`;
-
-      }).join('');
-
-      document.getElementById('color-controls').innerHTML = COLORI_INDIZI.map(c =>
-        `<button style="background:${coloreClasse(c)}" onclick="assegnaIndizioColore('${c}')">${c}</button>`).join('');
-
-      document.getElementById('number-controls').innerHTML = NUMERI.map(n => {
-        const isOff = numeriOscurati.includes(n);
-        return `<button onclick="assegnaIndizioNumero('${n}')" style="background:${isOff ? '#999' : '#ccc'}; opacity:${isOff ? 0.4 : 1}">${n}</button>`;
-      }).join('');
-
-      const residuiEl = document.getElementById('residue-tracker');
-      residuiEl.innerHTML = COLORI.map(col => {
-        const carteR = carteResidue[col] || [];
-        return `<div class="residue-row" data-colore="${col}">
-          <div class="residue-label"></div>
-          ${carteR.map(c => `
-            <div class="residue-button${c.oscurata ? ' oscurata' : ''}" onclick="toggleResidua('${col}', '${c.id}')">${c.numero}</div>
-          `).join('')}
-        </div>`;
-      }).join('');
+function render() {
+  const cardsEl = document.getElementById('cards');
+  cardsEl.innerHTML = carte.map((c, i) => {
+    let content = '?';
+    let cls = '';
+    if (c.numero && c.colore.length) {
+      cls = coloreClasse(c.colore[0]);
+      content = `<span class="${cls}">${c.numero}</span>`;
+    } else if (c.numero) {
+      content = c.numero;
+    } else if (c.colore.length) {
+      cls = coloreClasse(c.colore[0]);
+      content = `<span class="${cls}">?</span>`;
     }
 
-    if (!loadState()) {
-  start(numCarte); // solo se non c'è stato salvato
-} else {
-  render(); // ricostruisce la visualizzazione se stato esiste
-};
-  
+    const coloriDaMostrare = c.colore.length === 1
+      ? (arcobalenoAttivo && c.colore[0] !== 'Arcobaleno' ? [c.colore[0], 'Arcobaleno'] : [c.colore[0]])
+      : COLORI;
+    const numeriDaMostrare = c.numero ? [c.numero] : NUMERI;
+
+    const negColor = c.notColor;
+    const negNumber = c.notNumber;
+    const negColorAuto = c.notColorAuto || [];
+    const negNumberAuto = c.notNumberAuto || [];
+
+    return `
+      <div>
+        <div class="card${c.selected ? ' selected' : ''}" onclick="toggleSelection(${i})">
+          <button class="reset-button" onclick="event.stopPropagation(); resetCard(${i})">✕</button>
+          <div class="main">${content}</div>
+        </div>
+        <div class="card-hints">
+          <div class="color-dots">
+            ${coloriDaMostrare.map(col => `
+              <div class="color-dot ${coloreClasse(col)}${negColor.includes(col) ? ' oscurato' : ''}"></div>
+            `).join('')}
+          </div>
+          <div class="number-hints">
+            ${numeriDaMostrare.map(num => `
+              <div class="number-hint${negNumber.includes(num) ? ' oscurato' : ''}">${num}</div>
+            `).join('')}
+          </div>
+          ${(negColorAuto.length || negNumberAuto.length) ? `
+            <div class="indizi-negativi">
+              ${negColorAuto.length ? `Auto Non: ${negColorAuto.join(', ')}` : ''}
+              ${negNumberAuto.length ? `<br>Auto ≠: ${negNumberAuto.join(', ')}` : ''}
+            </div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('color-controls').innerHTML = COLORI_INDIZI.map(c =>
+    `<button class="${coloreClasse(c)}" onclick="assegnaIndizioColore('${c}')">${c}</button>`).join('');
+
+  document.getElementById('number-controls').innerHTML = NUMERI.map(n =>
+    `<button onclick="assegnaIndizioNumero('${n}')">${n}</button>`).join('');
+
+  document.getElementById('residue-tracker').innerHTML = COLORI.map(col => `
+    <div class="residue-row" data-colore="${col}">
+      <div class="residue-label"></div>
+      ${carteResidue[col].map(c =>
+        `<div class="residue-button${c.oscurata ? ' oscurata' : ''}" onclick="toggleResidua('${col}', '${c.id}')">${c.numero}</div>`).join('')}
+    </div>
+  `).join('');
+}
+
+if (!loadState()) start(numCarte);
+else render();
+
 let wakeLock = null;
 
 async function attivaWakeLock() {
   try {
     if ('wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
-      console.log('🔒 Wake Lock attivo');
-      wakeLock.addEventListener('release', () => {
-        console.log('🔓 Wake Lock rilasciato');
-      });
-    } else {
-      console.warn('Wake Lock non supportato');
+      wakeLock.addEventListener('release', () => console.log('🔓 Wake Lock rilasciato'));
     }
   } catch (err) {
     console.error(`${err.name}, ${err.message}`);
   }
 }
 
-// Riattiva se torna visibile
 document.addEventListener('visibilitychange', () => {
   if (wakeLock !== null && document.visibilityState === 'visible') {
     attivaWakeLock();
   }
 });
 
-// Gestione checkbox e salvataggio preferenza
 const wakeLockToggle = document.getElementById('wakelock-toggle');
-
-// Ripristina preferenza da localStorage
 const savedPref = localStorage.getItem('hanabiWakeLock');
 if (savedPref === 'true') {
   wakeLockToggle.checked = true;
   attivaWakeLock();
 }
-
-// Salva ogni cambiamento dell’utente
 wakeLockToggle.addEventListener('change', async function () {
   localStorage.setItem('hanabiWakeLock', this.checked ? 'true' : 'false');
-  if (this.checked) {
-    await attivaWakeLock();
-  } else if (wakeLock) {
+  if (this.checked) await attivaWakeLock();
+  else if (wakeLock) {
     await wakeLock.release();
     wakeLock = null;
-    console.log('🔓 Wake Lock disattivato manualmente');
   }
 });
 </script>
-	<div class="versione">1.21</div>
+
+	<div class="versione">1.3</div>
 </body>
 </html>
-
-
-
 
