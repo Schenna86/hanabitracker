@@ -150,96 +150,83 @@
       color: #aaa;
       opacity: 0.7;
     }
-    .card-hints {
-      margin-top: 6px;
-      text-align: center;
-      font-size: 0.85rem;
-    }
-
-    .card-table-list {
-      width: 100%;
-      margin-top: 4px;
-    }
-    .card-table-list-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 2px;
-      gap: 4px;
-    }
-    .color-dot, .number-hint {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1em;
-      margin-right: 3px;
-      margin-bottom: 0;
-      opacity: 1;
-    }
-    .color-dot.oscurato, .number-hint.oscurato {
-      opacity: 0.06;
-      filter: grayscale(100%);
-    }
-    .number-hint {
-      background: #1c1c1c66;
-      border-radius: 7px;
-      color: #fff;
-      width: 18px;
-      height: 18px;
-      text-align: center;
-      font-size: 1em;
-      font-weight: bold;
-      margin-right: 3px;
-      margin-bottom: 0;
-      line-height: 18px;
-    }
-    .color-dot.yellow { background: gold; }
-    .color-dot.red { background: red; }
-    .color-dot.blue { background: blue; }
-    .color-dot.green { background: green; }
-    .color-dot.white { background: white; border: 1px solid #ccc; }
-    .color-dot.rainbow {
-      background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
-    }
-    .probability-value {
-      font-size: 0.87em;
-      color: #eee;
-      min-width: 26px;
-      text-align: left;
-      margin: 0 2px 0 0;
-    }
-    .probability-value.spenta {
-      opacity: 0.12;
-    }
-
-    @media (max-width: 480px) {
-      .card-hints {
-        font-size: 0.98em;
-        margin-top: 5px;
-      }
-      .card-table-list-row {
-        flex-direction: column;
-        align-items: flex-start;
-        margin-bottom: 1px;
-        gap: 0;
-      }
-      .card-table-list {
-        margin-top: 4px;
-        width: 100%;
-      }
-      .color-dot, .number-hint {
-        margin-right: 6px;
-        margin-bottom: 0;
-      }
-      .probability-value {
-        font-size: 0.96em;
-        margin-bottom: 3px;
-        margin-left: 2px;
-      }
-    }
+   .card-hints {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 0.88rem;
+  width: 100%;
+}
+.card-columns-wrap {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  margin-top: 2px;
+}
+.card-col-table {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 58px;
+  max-width: 72px;
+}
+.card-row-flex {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 21px;
+}
+.color-dot, .number-hint {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1em;
+  margin-right: 3px;
+  opacity: 1;
+}
+.color-dot.oscurato, .number-hint.oscurato {
+  opacity: 0.09;
+  filter: grayscale(100%);
+}
+.number-hint {
+  background: #1c1c1c66;
+  border-radius: 7px;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  text-align: center;
+  font-size: 1em;
+  font-weight: bold;
+  line-height: 18px;
+}
+.color-dot.yellow { background: gold; }
+.color-dot.red { background: red; }
+.color-dot.blue { background: blue; }
+.color-dot.green { background: green; }
+.color-dot.white { background: white; border: 1px solid #ccc; }
+.color-dot.rainbow {
+  background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
+}
+.probability-value {
+  font-size: 0.89em;
+  color: #eee;
+  min-width: 29px;
+  text-align: left;
+  margin: 0 2px 0 0;
+}
+.probability-value.spenta {
+  opacity: 0.15;
+}
+@media (max-width: 600px) {
+  .card-hints { font-size: 1.01em;}
+  .card-columns-wrap { gap: 8px;}
+  .card-col-table { min-width: 50px; max-width: 60px;}
+  .probability-value { font-size: 0.97em; }
+}
   </style>
 </head>
 <body>
@@ -536,11 +523,11 @@ function render() {
     const negColorAuto = c.notColorAuto || [];
     const negNumberAuto = c.notNumberAuto || [];
 
-    // PROBABILITA' COLORE E NUMERO
+    // PROBABILITA'
     const probCol = calcolaProbabilitaColori(c);
     const probNum = calcolaProbabilitaNumeri(c);
 
-    // --- MOBILE FRIENDLY: su mobile visualizza in colonna, desktop in riga
+    // DUE COLONNE: colori a sinistra, numeri a destra
     return `
       <div>
         <div class="card${c.selected ? ' selected' : ''}" onclick="toggleSelection(${i})">
@@ -548,21 +535,23 @@ function render() {
           <div class="main">${content}</div>
         </div>
         <div class="card-hints">
-          <div class="card-table-list">
-            ${coloriDaMostrare.map((col, idx) => `
-              <div class="card-table-list-row">
-                <div class="color-dot ${coloreClasse(col)}${negColor.includes(col) ? ' oscurato' : ''}"></div>
-                <span class="probability-value${negColor.includes(col) ? ' spenta' : ''}">${probCol[idx]}</span>
-              </div>
-            `).join('')}
-          </div>
-          <div class="card-table-list">
-            ${numeriDaMostrare.map((num, idx) => `
-              <div class="card-table-list-row">
-                <div class="number-hint${negNumber.includes(num) ? ' oscurato' : ''}">${num}</div>
-                <span class="probability-value${negNumber.includes(num) ? ' spenta' : ''}">${probNum[idx]}</span>
-              </div>
-            `).join('')}
+          <div class="card-columns-wrap">
+            <div class="card-col-table">
+              ${coloriDaMostrare.map((col, idx) => `
+                <div class="card-row-flex">
+                  <div class="color-dot ${coloreClasse(col)}${negColor.includes(col) ? ' oscurato' : ''}"></div>
+                  <span class="probability-value${negColor.includes(col) ? ' spenta' : ''}">${probCol[idx]}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="card-col-table">
+              ${numeriDaMostrare.map((num, idx) => `
+                <div class="card-row-flex">
+                  <div class="number-hint${negNumber.includes(num) ? ' oscurato' : ''}">${num}</div>
+                  <span class="probability-value${negNumber.includes(num) ? ' spenta' : ''}">${probNum[idx]}</span>
+                </div>
+              `).join('')}
+            </div>
           </div>
           ${(negColorAuto.length || negNumberAuto.length) ? `
             <div class="indizi-negativi">
@@ -588,7 +577,6 @@ function render() {
     </div>
   `).join('');
 }
-
 if (!loadState()) start(numCarte);
 else render();
 
