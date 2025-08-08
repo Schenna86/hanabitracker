@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hanabi - Selezione Iniziale</title>
+  <style>
+    body {
+      background: #333;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    .option-group {
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+    label {
+      margin-right: 1rem;
+    }
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+    }
+    .radio-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .versione {
+  position: fixed;
+  bottom: 10px;
+  right: 15px;
+  font-size: 0.85rem;
+  color: #aaa;
+  opacity: 0.7;
+}
+  </style>
+</head>
+<body>
+  <h1>Hanabi Tracker</h1>
+
+  <div class="option-group">
+    <h3>Numero di carte</h3>
+    <label><input type="radio" name="carte" value="4" checked /> 4 carte</label>
+    <label><input type="radio" name="carte" value="5" /> 5 carte</label>
+  </div>
+
+  <div class="option-group">
+    <h3>Colore Arcobaleno</h3>
+    <label><input type="checkbox" id="arcobaleno" checked /> Attivo</label>
+  </div>
+
+  <div class="option-group">
+    <h3>Posizione della nuova carta dopo il reset</h3>
+    <div class="radio-group">
+      <label><input type="radio" name="posizione" value="sinistra" checked /> Sinistra</label>
+      <label><input type="radio" name="posizione" value="destra" /> Destra</label>
+      <label><input type="radio" name="posizione" value="sostituisci" /> Sostituisci</label>
+    </div>
+  </div>
+
+  <button onclick="inizia()">Inizia</button>
+  
+
+  <script>
+    function inizia() {
+      const carte = document.querySelector('input[name="carte"]:checked').value;
+      const arcobaleno = document.getElementById('arcobaleno').checked ? 'on' : 'off';
+      const posizione = document.querySelector('input[name="posizione"]:checked').value;
+      window.location.href = `gioco.html?carte=${carte}&arcobaleno=${arcobaleno}&reset=${posizione}`;
+    }
+ 
+  </script>
+  <div class="versione">1.3</div>
+</body>
+</html>
+
+
+
+
+
+
+
