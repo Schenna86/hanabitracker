@@ -1,4 +1,24 @@
-## 🟣 1.4-beta — *06/08/2025*
+## 🟢 1.5 — *08/08/2025*  
+
+### Nuove funzionalità  
+- **Pressione lunga su una carta (≥ 1 secondo)**:  
+  - Apre un **overlay rapido** per impostare direttamente **colore** o **numero**.  
+  - Funziona sia su **desktop** che su **mobile**.  
+  - Click breve continua a funzionare come selezione/deselezione.  
+
+### Miglioramenti UI/UX  
+- **Overlay colori**:  
+  - Mostra **solo i pallini** dei colori disponibili (senza testo), con tooltip al passaggio del mouse.  
+- **Reset carta**:  
+  - Non attiva più accidentalmente la pressione lunga.  
+- Tutte le funzionalità della **1.4** (probabilità, due colonne, negazioni, ecc.) restano invariate.  
+
+### Correzioni  
+- Eliminati possibili falsi trigger del long-press durante altre azioni.  
+
+---
+
+## 🟣 1.4 — *06/08/2025*
 
 ### Probabilità colori e numeri sotto ogni carta
 
@@ -6,7 +26,8 @@
   - La **percentuale di probabilità** che la carta sia di quel colore (in base alle residue e alle negazioni).
   - La **percentuale di probabilità** che la carta sia di quel numero (in base alle residue e alle negazioni).
 - Il calcolo delle probabilità è **dinamico**: ogni volta che cambia una negazione o una carta residue, le percentuali vengono aggiornate in tempo reale.
-- Le probabilità sono **calcolate solo sulle combinazioni effettivamente possibili** per ciascuna carta.
+- I conteggi ora escludono automaticamente le carte certe già in mano ai giocatori.
+- Percentuali normalizzate sui soli colori/numeri possibili per quella carta.
 
 ### Nuova homepage e setup partita
 
@@ -23,17 +44,14 @@
 
 - Sotto ogni carta, la visualizzazione di **colori e numeri** con relative probabilità è stata **riorganizzata su due colonne** (colonna colori e colonna numeri) per una migliore leggibilità sia su desktop che su mobile.
 
-### Countdown residue (fine partita)
-
-- Sotto la sezione "Carte Residue" appare un **countdown** che indica quante carte residue puoi ancora oscurare (eliminare) senza superare il limite matematico per una partita “perfetta”.
-- Se oscuri più residue del massimo consentito, viene mostrato un **avviso rosso** per segnalare che la partita non è più teoricamente vincibile con il massimo dei punti.
-
 ### Migliorie tecniche e UX
 
 - **Parametri di setup** ora completamente automatici: il tracker calcola tutto il necessario sulla base di giocatori, arcobaleno e reset.
 - **Grafica mobile** ottimizzata per la nuova visualizzazione percentuali e countdown residue.
 - **Negazioni automatiche** e tutte le funzionalità precedenti restano perfettamente integrate.
-- 
+
+---
+
 ## 🟢 1.3 — *04/08/2025* 
 
 ### Pallini colorati e numeri sotto ogni carta
