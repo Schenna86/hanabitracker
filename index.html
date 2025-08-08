@@ -74,7 +74,7 @@
 
   <button onclick="inizia()">Inizia</button>
   
-  <button onclick="test()">Test 1.4 Beta</button>
+
   <script>
     function inizia() {
       const carte = document.querySelector('input[name="carte"]:checked').value;
@@ -82,16 +82,12 @@
       const posizione = document.querySelector('input[name="posizione"]:checked').value;
       window.location.href = `gioco.html?carte=${carte}&arcobaleno=${arcobaleno}&reset=${posizione}`;
     }
-     function test() {
-      const carte = document.querySelector('input[name="carte"]:checked').value;
-      const arcobaleno = document.getElementById('arcobaleno').checked ? 'on' : 'off';
-      const posizione = document.querySelector('input[name="posizione"]:checked').value;
-      window.location.href = `index14.html?carte=${carte}&arcobaleno=${arcobaleno}&reset=${posizione}`;
-    }
+ 
   </script>
   <div class="versione">1.3</div>
 </body>
 </html>
+
 
 
 
