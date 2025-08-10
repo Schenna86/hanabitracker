@@ -204,32 +204,43 @@ let historyStack = [];
 
 /* ======== Long press handling (>= 1000ms) ======== */
 let lpTimer = null;
-let lpTriggered = false;
+let lpTriggered = false; // diventa true quando scatta il timeout (overlay aperto)
 let lpIndex = null;
 const LONG_PRESS_MS = 1000;
 
 function startPressTimer(index) {
-  cancelPressTimer();
-  lpTriggered = false;
+  cancelPressTimer();        // reset eventuale timer precedente
+  lpTriggered = false;       // nuovo ciclo: non è ancora scattato
   lpIndex = index;
   lpTimer = setTimeout(() => {
-    lpTriggered = true;
+    lpTimer = null;          // timer consumato
+    lpTriggered = true;      // long-press attivo -> apri overlay
     apriOverlay(index);
   }, LONG_PRESS_MS);
 }
 
-function cancelPressTimer() {
+// triggerClick: se true prova a fare click breve
+// index: l'indice della carta coinvolta
+function cancelPressTimer(triggerClick = false, index = null) {
   if (lpTimer) {
+    // Timer non è ancora scattato -> era un tap breve
     clearTimeout(lpTimer);
     lpTimer = null;
+    // long-press NON è partito
+    if (triggerClick && index !== null) handleClickCard(index);
+  } else {
+    // Se il timer è già nullo:
+    // - o non era mai partito
+    // - oppure è già scattato (long-press)
+    // In entrambi i casi, NON facciamo click breve se lpTriggered è true
+    if (triggerClick && index !== null && !lpTriggered) {
+      handleClickCard(index);
+    }
   }
 }
 
 function handleClickCard(index) {
-  if (lpTriggered) { // se già aperto overlay, ignoro click breve
-    lpTriggered = false;
-    return;
-  }
+  // Click breve: toggla selezione
   toggleSelection(index);
 }
 
@@ -260,8 +271,8 @@ function apriOverlay(index) {
 
 function chiudiOverlay() {
   document.getElementById('overlay').style.display = 'none';
-  lpTriggered = false;
-  lpIndex = null;
+  // restano: lpTriggered true finché non parte un nuovo ciclo;
+  // verrà ignorato il click breve fino al prossimo startPressTimer
 }
 
 function impostaColore(colore) {
@@ -387,7 +398,6 @@ function assegnaIndizioColore(colore) {
   const altre = carte.filter(c => !c.selected);
 
   selezionate.forEach(c => { if (!c.colore.includes(colore)) c.colore.push(colore); });
-
   altre.forEach(c => {
     if (!c.notColor.includes(colore)) c.notColor.push(colore);
     if (!c.notColor.includes('Arcobaleno')) c.notColor.push('Arcobaleno');
@@ -538,15 +548,15 @@ function render() {
       <div>
         <div class="card${c.selected ? ' selected' : ''}"
              onmousedown="startPressTimer(${i})"
-             onmouseup="cancelPressTimer(); handleClickCard(${i})"
-             onmouseleave="cancelPressTimer()"
+             onmouseup="cancelPressTimer(true, ${i})"
+             onmouseleave="cancelPressTimer(false, ${i})"
              ontouchstart="startPressTimer(${i})"
-             ontouchend="cancelPressTimer(); handleClickCard(${i})">
+             ontouchend="cancelPressTimer(true, ${i})">
           <button class="reset-button"
-            onmousedown="event.stopPropagation(); cancelPressTimer();"
-            onmouseup="event.stopPropagation(); cancelPressTimer();"
-            ontouchstart="event.stopPropagation(); cancelPressTimer();"
-            ontouchend="event.stopPropagation(); cancelPressTimer();"
+            onmousedown="event.stopPropagation(); cancelPressTimer(false, ${i});"
+            onmouseup="event.stopPropagation(); cancelPressTimer(false, ${i});"
+            ontouchstart="event.stopPropagation(); cancelPressTimer(false, ${i});"
+            ontouchend="event.stopPropagation(); cancelPressTimer(false, ${i});"
             onclick="event.stopPropagation(); resetCard(${i})">✕</button>
           <div class="main">${content}</div>
         </div>
