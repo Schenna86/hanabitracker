@@ -202,9 +202,13 @@ let carteResidue = {};
 let numeriOscurati = [];
 let historyStack = [];
 
+/* ======== Anti-doppio toggle / ghost click ======== */
+let lastTouchTs = 0;                 // timestamp ultimo touchend
+let lastToggleGuard = { i:null, ts:0 };
+
 /* ======== Long press handling (>= 1000ms) ======== */
 let lpTimer = null;
-let lpTriggered = false; // diventa true quando scatta il timeout (overlay aperto)
+let lpTriggered = false; // true quando scatta il timeout (overlay aperto)
 let lpIndex = null;
 const LONG_PRESS_MS = 1000;
 
@@ -226,13 +230,9 @@ function cancelPressTimer(triggerClick = false, index = null) {
     // Timer non è ancora scattato -> era un tap breve
     clearTimeout(lpTimer);
     lpTimer = null;
-    // long-press NON è partito
     if (triggerClick && index !== null) handleClickCard(index);
   } else {
-    // Se il timer è già nullo:
-    // - o non era mai partito
-    // - oppure è già scattato (long-press)
-    // In entrambi i casi, NON facciamo click breve se lpTriggered è true
+    // Timer non in corso: se non è scattato long-press, consenti click
     if (triggerClick && index !== null && !lpTriggered) {
       handleClickCard(index);
     }
@@ -240,7 +240,10 @@ function cancelPressTimer(triggerClick = false, index = null) {
 }
 
 function handleClickCard(index) {
-  // Click breve: toggla selezione
+  // Debounce: evita doppio toggle ravvicinato sulla stessa carta (touch+mouse)
+  const now = Date.now();
+  if (lastToggleGuard.i === index && (now - lastToggleGuard.ts) < 250) return;
+  lastToggleGuard = { i:index, ts: now };
   toggleSelection(index);
 }
 
@@ -271,8 +274,7 @@ function apriOverlay(index) {
 
 function chiudiOverlay() {
   document.getElementById('overlay').style.display = 'none';
-  // restano: lpTriggered true finché non parte un nuovo ciclo;
-  // verrà ignorato il click breve fino al prossimo startPressTimer
+  // lpTriggered rimane true finché non parte un nuovo ciclo (nuovo touch/mouse)
 }
 
 function impostaColore(colore) {
@@ -547,11 +549,11 @@ function render() {
     return `
       <div>
         <div class="card${c.selected ? ' selected' : ''}"
-             onmousedown="startPressTimer(${i})"
-             onmouseup="cancelPressTimer(true, ${i})"
+             onmousedown="if (Date.now() - lastTouchTs < 600) return; startPressTimer(${i})"
+             onmouseup="if (Date.now() - lastTouchTs < 600) { lastTouchTs = 0; return; } cancelPressTimer(true, ${i})"
              onmouseleave="cancelPressTimer(false, ${i})"
              ontouchstart="startPressTimer(${i})"
-             ontouchend="cancelPressTimer(true, ${i})">
+             ontouchend="lastTouchTs = Date.now(); cancelPressTimer(true, ${i})">
           <button class="reset-button"
             onmousedown="event.stopPropagation(); cancelPressTimer(false, ${i});"
             onmouseup="event.stopPropagation(); cancelPressTimer(false, ${i});"
