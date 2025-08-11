@@ -26,11 +26,14 @@
       padding: 0.75rem;
       text-align: center;
       cursor: pointer;
-      transition: 0.2s;
+      transition: border-color .12s ease, box-shadow .12s ease, background .2s;
       position: relative;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: manipulation;
     }
+    * { -webkit-tap-highlight-color: transparent; }
+
     .card.selected { border-color: #007bff; box-shadow: 0 0 10px rgba(0,123,255,0.5); }
     .card .main { font-size: 2rem; font-weight: bold; }
     .indizi-negativi { font-size: 0.75rem; margin-top: 0.3rem; color: #ccc; }
@@ -389,7 +392,9 @@ function start(n) {
 function toggleSelection(i) {
   pushHistory();
   carte[i].selected = !carte[i].selected;
-  render();
+  // 🔹 no re-render: aggiorno solo la card per evitare stutter
+  const el = document.getElementById(`card-${i}`);
+  if (el) el.classList.toggle('selected', carte[i].selected);
   saveState();
 }
 
@@ -548,7 +553,7 @@ function render() {
 
     return `
       <div>
-        <div class="card${c.selected ? ' selected' : ''}"
+        <div id="card-${i}" class="card${c.selected ? ' selected' : ''}"
              onmousedown="if (Date.now() - lastTouchTs < 600) return; startPressTimer(${i})"
              onmouseup="if (Date.now() - lastTouchTs < 600) { lastTouchTs = 0; return; } cancelPressTimer(true, ${i})"
              onmouseleave="cancelPressTimer(false, ${i})"
