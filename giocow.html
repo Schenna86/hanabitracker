@@ -40,6 +40,9 @@
       padding: 0.5rem 1rem; font-size: 1rem; border: 1px solid #000; border-radius: 5px;
       cursor: pointer; min-width: 60px;
     }
+	.card, .controls button, .residue-button {
+	touch-action: manipulation;
+	}
     .yellow { color: gold; } .red { color: red; } .blue { color: blue; }
     .green { color: green; } .white { color: white; }
     .rainbow {
@@ -173,7 +176,7 @@
 
   <!-- Wake lock -->
   <div style="text-align: center; margin-top: 1rem;">
-    <label style="color: white;">
+    <label style="color: black;">
       <input type="checkbox" id="wakelock-toggle" />
       Mantieni schermo attivo
     </label>
@@ -249,7 +252,20 @@ function cancelPressTimer() {
     lpTimer = null;
   }
 }
+ let lastTouchEndTs = 0;
 
+  function onCardTouchEnd(i) {
+    lastTouchEndTs = Date.now();
+    cancelPressTimer();
+    handleClickCard(i);
+  }
+
+  function onCardMouseUp(i) {
+    cancelPressTimer();
+    if (Date.now() - lastTouchEndTs < 450) return; // ignora mouseup successivo al touch
+    handleClickCard(i);
+  }
+  
 function handleClickCard(index) {
   if (lpTriggered) { // se già aperto overlay, ignoro click breve
     lpTriggered = false;
@@ -563,10 +579,10 @@ function render() {
       <div>
         <div class="card${c.selected ? ' selected' : ''}"
              onmousedown="startPressTimer(${i})"
-             onmouseup="cancelPressTimer(); handleClickCard(${i})"
+			 onmouseup="onCardMouseUp(${i})"
              onmouseleave="cancelPressTimer()"
              ontouchstart="startPressTimer(${i})"
-             ontouchend="cancelPressTimer(); handleClickCard(${i})">
+             ontouchend="onCardTouchEnd(${i})"
           <button class="reset-button"
             onmousedown="event.stopPropagation(); cancelPressTimer();"
             onmouseup="event.stopPropagation(); cancelPressTimer();"
