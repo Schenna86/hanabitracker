@@ -37,12 +37,9 @@
     .controls { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1.5rem; }
     .control-row { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
     .controls button {
-      padding: 0.5rem 1rem; font-size: 1rem; border: 1px solid #000; border-radius: 5px;
+      padding: 0.5rem 1rem; font-size: 1rem; border: none; border-radius: 5px;
       cursor: pointer; min-width: 60px;
     }
-	.card, .controls button, .residue-button {
-	touch-action: manipulation;
-	}
     .yellow { color: gold; } .red { color: red; } .blue { color: blue; }
     .green { color: green; } .white { color: white; }
     .rainbow {
@@ -59,45 +56,18 @@
     }
     .residue-label { visibility: hidden; width: 0; margin: 0; padding: 0; }
     .residue-button {
-  padding: 0.3rem 0.6rem;
-  border-radius: 5px;
-  cursor: pointer;
-  min-width: 28px;
-  text-align: center;
-  transition: background 0.2s, opacity 0.2s;
-  border: 1px solid #000; /* bordino nero sempre */
-}
-   .residue-button.oscurata {
-      background: #333;
-      color: white;
-      opacity: 0.1;
+      padding: 0.3rem 0.6rem; border-radius: 5px; background: #ccc; border: 1px solid #ccc;
+      cursor: pointer; min-width: 28px; text-align: center; transition: background 0.2s, opacity 0.2s;
     }
-.residue-row[data-colore="Gia"] .residue-button {
-  background: gold;
-  color: white;
-}
-.residue-row[data-colore="Ros"] .residue-button {
-  background: red;
-  color: white;
-}
-.residue-row[data-colore="Blu"] .residue-button {
-  background: blue;
-  color: white;
-}
-.residue-row[data-colore="Ver"] .residue-button {
-  background: green;
-  color: white;
-}
-.residue-row[data-colore="Bia"] .residue-button {
-  background: white;
-  color: black; /* sul bianco meglio testo nero */
-}
-.residue-row[data-colore="Arcobaleno"] .residue-button {
-  background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
-  color: white;
-  font-weight: bold;
-}
-    .versione { position: fixed; bottom: 10px; right: 15px; font-size: 0.85rem; color: #aaa; opacity: 0.7; }
+   .residue-button.oscurata {background: #333; color: white; opacity: 0.1;}
+.residue-row[data-colore="Gia"] .residue-button {background: gold;  color: white;}
+.residue-row[data-colore="Ros"] .residue-button {background: red;  color: white;}
+.residue-row[data-colore="Blu"] .residue-button {background: blue; color: white;}
+.residue-row[data-colore="Ver"] .residue-button {background: green; color: white;}
+.residue-row[data-colore="Bia"] .residue-button {background: white; color: black; /* sul bianco meglio testo nero */}
+.residue-row[data-colore="Arcobaleno"] .residue-button {background: linear-gradient(to right, red, orange, yellow, green, blue, violet); color: white; font-weight: bold;}
+  
+  .versione { position: fixed; bottom: 10px; right: 15px; font-size: 0.85rem; color: #aaa; opacity: 0.7; }
     .hantrack { position: fixed; bottom: 10px; left: 15px; font-size: 0.85rem; color: #aaa; opacity: 0.7; }
 
     .card-hints { margin-top: 6px; text-align: center; font-size: 0.88rem; width: 100%; }
@@ -119,7 +89,7 @@
     .color-dot.green { background: green; }
     .color-dot.white { background: white; border: 1px solid #ccc; }
     .color-dot.rainbow { background: linear-gradient(to right, red, orange, yellow, green, blue, violet); }
-    .probability-value { font-size: 0.89em; color: black; min-width: 29px; text-align: left; margin: 0 2px 0 0; }
+    .probability-value { font-size: 0.89em; color: #000000; min-width: 29px; text-align: left; margin: 0 2px 0 0; }
     .probability-value.spenta { opacity: 0.15; }
     @media (max-width: 600px) {
       .card-hints { font-size: 1.01em; }
@@ -141,7 +111,7 @@
     .modal .section { margin-top: 10px; }
     .modal .btns { display: flex; flex-wrap: wrap; gap: 8px; }
     .modal button {
-      padding: 8px 12px; border-radius: 8px; border: 1px solid #666; background: #3a3a3a; color: #eee; cursor: pointer;
+      padding: 8px 12px; border-radius: 8px; border: 1px solid #666; background: #3a3a3a; color: #000000; cursor: pointer;
     }
     .modal button:hover { filter: brightness(1.1); }
     .modal .color-chip { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #888; display: block; }
@@ -175,7 +145,7 @@
   </div>
 
   <!-- Wake lock -->
-  <div style="text-align: center; margin-top: 1rem;">
+  <div style="text-align: center; margin-top: 1rem; >
     <label style="color: black;">
       <input type="checkbox" id="wakelock-toggle" />
       Mantieni schermo attivo
@@ -252,20 +222,7 @@ function cancelPressTimer() {
     lpTimer = null;
   }
 }
- let lastTouchEndTs = 0;
 
-  function onCardTouchEnd(i) {
-    lastTouchEndTs = Date.now();
-    cancelPressTimer();
-    handleClickCard(i);
-  }
-
-  function onCardMouseUp(i) {
-    cancelPressTimer();
-    if (Date.now() - lastTouchEndTs < 450) return; // ignora mouseup successivo al touch
-    handleClickCard(i);
-  }
-  
 function handleClickCard(index) {
   if (lpTriggered) { // se già aperto overlay, ignoro click breve
     lpTriggered = false;
@@ -579,10 +536,10 @@ function render() {
       <div>
         <div class="card${c.selected ? ' selected' : ''}"
              onmousedown="startPressTimer(${i})"
-			 onmouseup="onCardMouseUp(${i})"
+             onmouseup="cancelPressTimer(); handleClickCard(${i})"
              onmouseleave="cancelPressTimer()"
              ontouchstart="startPressTimer(${i})"
-             ontouchend="onCardTouchEnd(${i})"
+             ontouchend="cancelPressTimer(); handleClickCard(${i})">
           <button class="reset-button"
             onmousedown="event.stopPropagation(); cancelPressTimer();"
             onmouseup="event.stopPropagation(); cancelPressTimer();"
