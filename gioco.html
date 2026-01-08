@@ -37,6 +37,14 @@
 
     .card.selected { border-color: #007bff; box-shadow: 0 0 10px rgba(0,123,255,0.5); }
     .card .main { font-size: 2rem; font-weight: bold; }
+	.draw-label{
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: .85;
+  margin-bottom: 6px;
+  text-align: center;
+  color: #111;
+}
     .indizi-negativi { font-size: 0.75rem; margin-top: 0.3rem; color: #ccc; }
     .controls { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1.5rem; }
     .control-row { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
@@ -205,6 +213,7 @@ let carte = [];
 let carteResidue = {};
 let numeriOscurati = [];
 let historyStack = [];
+let drawCounter = 0; // cresce ad ogni sostituzione (pescata)
 
 /* ======== Anti-doppio toggle / ghost click ======== */
 let lastTouchTs = 0;                 // timestamp ultimo touchend
@@ -345,7 +354,7 @@ function inizializzaCarteResidue() {
 }
 
 function pushHistory() {
-  historyStack.push(JSON.parse(JSON.stringify({ carte, carteResidue, numeriOscurati })));
+  historyStack.push(JSON.parse(JSON.stringify({ carte, carteResidue, numeriOscurati, drawCounter })));
   if (historyStack.length > 100) historyStack.shift();
 }
 
@@ -355,12 +364,13 @@ function undo() {
   carte = prev.carte;
   carteResidue = prev.carteResidue;
   numeriOscurati = prev.numeriOscurati;
+  drawCounter = prev.drawCounter ?? 0;
   render();
   saveState();
 }
 
 function saveState() {
-  const state = { carte, carteResidue, numeriOscurati };
+  const state = { carte, carteResidue, numeriOscurati, drawCounter };
   localStorage.setItem('hanabiTrackerState', JSON.stringify(state));
 }
 
@@ -369,9 +379,13 @@ function loadState() {
   if (saved) {
     try {
       const state = JSON.parse(saved);
-      carte = state.carte;
-      carteResidue = state.carteResidue;
-      numeriOscurati = state.numeriOscurati;
+      carte = state.carte || [];
+      carteResidue = state.carteResidue || {};
+      numeriOscurati = state.numeriOscurati || [];
+      // compatibilità con salvataggi vecchi
+      drawCounter = state.drawCounter ?? Math.max(0, ...carte.map(c => c.drawId || 0));
+      // se mancava drawId nelle carte vecchie
+      carte.forEach(c => { if (c.drawId == null) c.drawId = 0; });
       return true;
     } catch {}
   }
@@ -380,15 +394,18 @@ function loadState() {
 
 function start(n) {
   historyStack = [];
+  drawCounter = 0;
   carte = Array(n).fill(0).map(() => ({
     colore: [], notColor: [], numero: null, notNumber: [],
-    notColorAuto: [], notNumberAuto: [], selected: false
+    notColorAuto: [], notNumberAuto: [], selected: false,
+    drawId: 0 // 0 = "Carta iniziale"
   }));
   inizializzaCarteResidue();
   numeriOscurati = [];
   render();
   saveState();
 }
+
 
 function toggleSelection(i) {
   pushHistory();
@@ -438,14 +455,24 @@ function resetCard(i) {
   pushHistory();
   const nuovaCarta = {
     colore: [], notColor: [], numero: null, notNumber: [],
-    notColorAuto: [], notNumberAuto: [], selected: false
+    notColorAuto: [], notNumberAuto: [], selected: false,
+    drawId: ++drawCounter // <-- questa è la “pescata”
   };
-  if (resetMode === "sinistra") { carte.splice(i, 1); carte.unshift(nuovaCarta); }
-  else if (resetMode === "destra") { carte.splice(i, 1); carte.push(nuovaCarta); }
-  else { carte[i] = nuovaCarta; }
+
+  if (resetMode === "sinistra") {
+    carte.splice(i, 1);
+    carte.unshift(nuovaCarta);
+  } else if (resetMode === "destra") {
+    carte.splice(i, 1);
+    carte.push(nuovaCarta);
+  } else {
+    carte[i] = nuovaCarta;
+  }
+
   render();
   saveState();
 }
+
 
 function toggleResidua(colore, id) {
   const carta = carteResidue[colore].find(c => c.id === id);
@@ -526,6 +553,28 @@ function calcolaProbabilitaNumeri(carta, idx, coloriDaMostrare, numeriDaMostrare
 /* ======== Render ======== */
 function render() {
   const cardsEl = document.getElementById('cards');
+
+  // --- ranking pescate: 1=ultima, 2=penultima, ecc.
+  const drawn = carte
+    .map((c, i) => ({ i, id: c.drawId || 0 }))
+    .filter(x => x.id > 0)
+    .sort((a, b) => b.id - a.id);
+
+  const rankByIndex = new Map();
+  drawn.forEach((x, r) => rankByIndex.set(x.i, r + 1));
+
+  function drawLabelFor(i) {
+    const id = carte[i].drawId || 0;
+    if (id === 0) return "Carta iniziale";
+    const rank = rankByIndex.get(i) || 999;
+    if (rank === 1) return "Ultima pescata";
+    if (rank === 2) return "Penultima pescata";
+    if (rank === 3) return "Terzultima pescata";
+    if (rank === 4) return "Quartultima pescata";
+    if (rank === 5) return "Quintultima pescata";
+    return `${rank}ª ultima pescata`;
+  }
+
   cardsEl.innerHTML = carte.map((c, i) => {
     let content = '?';
     let cls = '';
@@ -552,6 +601,8 @@ function render() {
     const probCol = calcolaProbabilitaColori(c, i, coloriDaMostrare, numeriDaMostrare);
     const probNum = calcolaProbabilitaNumeri(c, i, coloriDaMostrare, numeriDaMostrare);
 
+    const pescataLabel = drawLabelFor(i);
+
     return `
       <div>
         <div id="card-${i}" class="card${c.selected ? ' selected' : ''}"
@@ -566,8 +617,11 @@ function render() {
             ontouchstart="event.stopPropagation(); cancelPressTimer(false, ${i});"
             ontouchend="event.stopPropagation(); cancelPressTimer(false, ${i});"
             onclick="event.stopPropagation(); resetCard(${i})">✕</button>
+
+          <div class="draw-label">${pescataLabel}</div>
           <div class="main">${content}</div>
         </div>
+
         <div class="card-hints">
           <div class="card-columns-wrap">
             <div class="card-col-table">
@@ -610,6 +664,7 @@ function render() {
   `).join('');
 }
 
+
 /* ======== Avvio ======== */
 if (!loadState()) start(cartePerGiocatore);
 else render();
@@ -641,5 +696,4 @@ wakeLockToggle.addEventListener('change', async function () {
 <div class="versione">1.5</div>
 </body>
 </html>
-
 
