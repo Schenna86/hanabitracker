@@ -33,6 +33,14 @@
     }
     .card.selected { border-color: #007bff; box-shadow: 0 0 10px rgba(0,123,255,0.5); }
     .card .main { font-size: 2rem; font-weight: bold; }
+	    	.draw-label{
+      font-size: 0.78rem;
+      font-weight: 700;
+      opacity: .85;
+      margin-bottom: 6px;
+      text-align: center;
+      color: #111;
+    }
     .indizi-negativi { font-size: 0.75rem; margin-top: 0.3rem; color: #ccc; }
     .controls { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1.5rem; }
     .control-row { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
@@ -41,7 +49,7 @@
       cursor: pointer; min-width: 60px;
     }
     .yellow { color: gold; } .red { color: red; } .blue { color: blue; }
-    .green { color: green; } .white { color: white; }
+    .green { color: green; } .white { color: black; }
     .rainbow {
       background: linear-gradient(to right, red, orange, yellow, green, blue, violet);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: bold;
@@ -128,11 +136,11 @@
     <div class="header">
       <button onclick="tornaAllaHome()">Torna alla Home</button>
       <button onclick="undo()">Undo</button>
-      <button onclick="generaNegazioni()">Genera Negazioni</button>
     </div>
 
-    <div class="cards" id="cards"></div>
-
+		<div id="remaining-counter" style="text-align: center; margin-top: 1rem; font-size: 1rem;">Carte rimaste nel mazzo: 0</div>
+        <div class="cards" id="cards"></div>
+		
     <div class="controls">
       <div class="control-row" id="color-controls"></div>
       <div class="control-row" id="number-controls"></div>
