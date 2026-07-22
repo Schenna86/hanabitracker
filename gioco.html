@@ -384,8 +384,17 @@
               numeriOscurati = state.numeriOscurati || [];
               // compatibilità con salvataggi vecchi
               drawCounter = state.drawCounter ?? Math.max(0, ...carte.map(c => c.drawId || 0));
-              // se mancava drawId nelle carte vecchie
-              carte.forEach(c => { if (c.drawId == null) c.drawId = 0; });
+              // Normalizza anche i salvataggi creati dalle versioni precedenti.
+              carte.forEach(c => {
+                c.colore = Array.isArray(c.colore) ? c.colore : [];
+                c.notColor = Array.isArray(c.notColor) ? c.notColor : [];
+                c.numero = c.numero == null ? null : String(c.numero);
+                c.notNumber = Array.isArray(c.notNumber) ? c.notNumber.map(String) : [];
+                c.notColorAuto = Array.isArray(c.notColorAuto) ? c.notColorAuto : [];
+                c.notNumberAuto = Array.isArray(c.notNumberAuto) ? c.notNumberAuto.map(String) : [];
+                c.selected = Boolean(c.selected);
+                if (c.drawId == null) c.drawId = 0;
+              });
               return true;
             } catch {}
           }
@@ -497,70 +506,254 @@
         }
         
         
-        /* ======== Probabilità con esclusione carte certe ======== */
+        /* ======== Probabilità esatte su tutta la mano ======== */
         function buildResidueCounts() {
           const counts = {};
           COLORI.forEach(col => {
             counts[col] = { '1':0,'2':0,'3':0,'4':0,'5':0 };
-            carteResidue[col].forEach(x => { if (!x.oscurata) counts[col][x.numero]++; });
+            (carteResidue[col] || []).forEach(x => {
+              if (!x.oscurata && counts[col][x.numero] !== undefined) counts[col][x.numero]++;
+            });
           });
           return counts;
         }
-function reserveKnownCards(excludeIdx, counts) {
-  carte.forEach((c, i) => {
-    if (i === excludeIdx) return;
-    if (c.numero) {
-      if (c.colore.length === 1) {
-        const col = c.colore[0];
-        if (counts[col] && counts[col][c.numero] > 0) counts[col][c.numero]--;
-      } else {
-        // Solo numero: riserva in colori non esclusi
-        COLORI.forEach(col => {
-          if (!c.notColor.includes(col) && counts[col] && counts[col][c.numero] > 0) {
-            counts[col][c.numero]--;
+
+        function calcolaCarteRimaste() {
+          const counts = buildResidueCounts();
+          return Object.values(counts).reduce(
+            (tot, col) => tot + Object.values(col).reduce((a, b) => a + b, 0),
+            0
+          );
+        }
+
+        function valoriNegati(carta, campoManuale, campoAutomatico) {
+          return new Set([
+            ...(Array.isArray(carta[campoManuale]) ? carta[campoManuale] : []),
+            ...(Array.isArray(carta[campoAutomatico]) ? carta[campoAutomatico] : [])
+          ]);
+        }
+
+        function coloriCompatibili(carta) {
+          const indizi = Array.isArray(carta.colore) ? carta.colore : [];
+          let possibili;
+
+          if (indizi.length === 0) {
+            possibili = [...COLORI];
+          } else if (indizi.length === 1) {
+            const colore = indizi[0];
+            if (colore === 'Arcobaleno') {
+              possibili = arcobalenoAttivo ? ['Arcobaleno'] : [];
+            } else {
+              possibili = arcobalenoAttivo
+                ? [colore, 'Arcobaleno']
+                : [colore];
+            }
+          } else {
+            // Più indizi colore diversi possono identificare soltanto l'arcobaleno.
+            possibili = arcobalenoAttivo ? ['Arcobaleno'] : [];
           }
-        });
-      }
-    }
-  });
-  return counts;
-}
 
-function calcolaCarteRimaste() {
-  const counts = buildResidueCounts();
-  return Object.values(counts).reduce((tot, col) => tot + Object.values(col).reduce((a, b) => a + b, 0), 0);
-}
+          const vietati = valoriNegati(carta, 'notColor', 'notColorAuto');
+          return possibili.filter(col => COLORI.includes(col) && !vietati.has(col));
+        }
 
-        function calcolaProbabilitaColori(carta, idx, coloriDaMostrare, numeriDaMostrare) {
-          const counts = reserveKnownCards(idx, buildResidueCounts());
-          const perColore = coloriDaMostrare.map(col => {
-            if (carta.notColor.includes(col)) return 0;
-            return numeriDaMostrare
-              .filter(n => !carta.notNumber.includes(n))
-              .reduce((acc, n) => acc + (counts[col]?.[n] || 0), 0);
-          });
-          const tot = perColore.reduce((a,b)=>a+b,0);
-          return perColore.map(v => (tot === 0 ? "0%" : Math.round((v/tot)*100) + "%"));
+        function numeriCompatibili(carta) {
+          const vietati = valoriNegati(carta, 'notNumber', 'notNumberAuto');
+          const possibili = carta.numero ? [String(carta.numero)] : [...NUMERI];
+          return possibili.filter(num => NUMERI.includes(num) && !vietati.has(num));
         }
-        function calcolaProbabilitaNumeri(carta, idx, coloriDaMostrare, numeriDaMostrare) {
-          const counts = reserveKnownCards(idx, buildResidueCounts());
-          const perNumero = numeriDaMostrare.map(num => {
-            if (carta.notNumber.includes(num)) return 0;
-            return coloriDaMostrare
-              .filter(col => !carta.notColor.includes(col))
-              .reduce((acc, col) => acc + (counts[col]?.[num] || 0), 0);
-          });
-          const tot = perNumero.reduce((a,b)=>a+b,0);
-          return perNumero.map(v => (tot === 0 ? "0%" : Math.round((v/tot)*100) + "%"));
+
+        function inserisciOrdinato(valori, nuovoValore) {
+          const risultato = valori.slice();
+          let pos = risultato.length;
+          while (pos > 0 && risultato[pos - 1] > nuovoValore) pos--;
+          risultato.splice(pos, 0, nuovoValore);
+          return risultato;
         }
-        
-        /* ======== Render ======== */
+
+        function occorrenze(valori, valore) {
+          let totale = 0;
+          for (const x of valori) if (x === valore) totale++;
+          return totale;
+        }
+
+        function calcolaProbabilitaMano() {
+          const residue = buildResidueCounts();
+          const tipi = [];
+          const disponibilita = [];
+
+          COLORI.forEach(colore => {
+            NUMERI.forEach(numero => {
+              tipi.push({ colore, numero });
+              disponibilita.push(residue[colore]?.[numero] || 0);
+            });
+          });
+
+          const candidati = carte.map(carta => {
+            const colori = new Set(coloriCompatibili(carta));
+            const numeri = new Set(numeriCompatibili(carta));
+            const lista = [];
+
+            tipi.forEach((tipo, indice) => {
+              if (
+                disponibilita[indice] > 0 &&
+                colori.has(tipo.colore) &&
+                numeri.has(tipo.numero)
+              ) {
+                lista.push(indice);
+              }
+            });
+
+            return lista;
+          });
+
+          const risultatiVuoti = carte.map(() => ({
+            colori: Object.fromEntries(COLORI.map(c => [c, 0])),
+            numeri: Object.fromEntries(NUMERI.map(n => [n, 0]))
+          }));
+
+          if (candidati.some(lista => lista.length === 0)) {
+            return { valido: false, totale: 0, carte: risultatiVuoti };
+          }
+
+          // Le carte più vincolate vengono elaborate per prime: stesso risultato,
+          // ma molte meno combinazioni da esplorare.
+          const ordine = carte
+            .map((_, indice) => indice)
+            .sort((a, b) => candidati[a].length - candidati[b].length);
+
+          const memo = new Map();
+
+          function contaCompletamenti(posizione, tipiUsati) {
+            if (posizione === ordine.length) return 1;
+
+            const chiave = `${posizione}|${tipiUsati.join('.')}`;
+            if (memo.has(chiave)) return memo.get(chiave);
+
+            const indiceCarta = ordine[posizione];
+            let totale = 0;
+
+            for (const tipoIndice of candidati[indiceCarta]) {
+              const disponibili =
+                disponibilita[tipoIndice] - occorrenze(tipiUsati, tipoIndice);
+              if (disponibili <= 0) continue;
+
+              const prossimiUsati = inserisciOrdinato(tipiUsati, tipoIndice);
+              totale += disponibili * contaCompletamenti(posizione + 1, prossimiUsati);
+            }
+
+            memo.set(chiave, totale);
+            return totale;
+          }
+
+          const totaleCombinazioni = contaCompletamenti(0, []);
+          if (totaleCombinazioni <= 0) {
+            return { valido: false, totale: 0, carte: risultatiVuoti };
+          }
+
+          const pesiPerCartaETipo = carte.map(() => Array(tipi.length).fill(0));
+          let stati = new Map();
+          stati.set('', { usati: [], peso: 1 });
+
+          for (let posizione = 0; posizione < ordine.length; posizione++) {
+            const indiceCarta = ordine[posizione];
+            const prossimiStati = new Map();
+
+            for (const stato of stati.values()) {
+              for (const tipoIndice of candidati[indiceCarta]) {
+                const disponibili =
+                  disponibilita[tipoIndice] - occorrenze(stato.usati, tipoIndice);
+                if (disponibili <= 0) continue;
+
+                const prossimiUsati = inserisciOrdinato(stato.usati, tipoIndice);
+                const completamenti =
+                  contaCompletamenti(posizione + 1, prossimiUsati);
+                if (completamenti <= 0) continue;
+
+                const pesoPassaggio = stato.peso * disponibili;
+                pesiPerCartaETipo[indiceCarta][tipoIndice] +=
+                  pesoPassaggio * completamenti;
+
+                const chiave = prossimiUsati.join('.');
+                const esistente = prossimiStati.get(chiave);
+                if (esistente) {
+                  esistente.peso += pesoPassaggio;
+                } else {
+                  prossimiStati.set(chiave, {
+                    usati: prossimiUsati,
+                    peso: pesoPassaggio
+                  });
+                }
+              }
+            }
+
+            stati = prossimiStati;
+          }
+
+          const risultati = carte.map((_, indiceCarta) => {
+            const perColore = Object.fromEntries(COLORI.map(c => [c, 0]));
+            const perNumero = Object.fromEntries(NUMERI.map(n => [n, 0]));
+
+            tipi.forEach((tipo, tipoIndice) => {
+              const probabilita =
+                pesiPerCartaETipo[indiceCarta][tipoIndice] / totaleCombinazioni;
+              perColore[tipo.colore] += probabilita;
+              perNumero[tipo.numero] += probabilita;
+            });
+
+            return { colori: perColore, numeri: perNumero };
+          });
+
+          return {
+            valido: true,
+            totale: totaleCombinazioni,
+            carte: risultati
+          };
+        }
+
+        function formattaPercentuali(valori) {
+          const puliti = valori.map(v => Number.isFinite(v) && v > 0 ? v : 0);
+          const somma = puliti.reduce((a, b) => a + b, 0);
+          if (somma <= 0) return puliti.map(() => '0%');
+
+          const esatti = puliti.map(v => (v / somma) * 100);
+          const interi = esatti.map(Math.floor);
+          let mancanti = 100 - interi.reduce((a, b) => a + b, 0);
+
+          const ordineResti = esatti
+            .map((v, i) => ({ i, resto: v - interi[i] }))
+            .sort((a, b) => b.resto - a.resto || a.i - b.i);
+
+          for (let i = 0; i < mancanti; i++) {
+            interi[ordineResti[i % ordineResti.length].i]++;
+          }
+
+          return interi.map(v => `${v}%`);
+        }
+
+
+/* ======== Render ======== */
         function render() {
           const cardsEl = document.getElementById('cards');
-        const remainingDiv = document.getElementById('remaining-counter');
-if (remainingDiv) {
-  remainingDiv.innerText = `Carte rimaste nel mazzo: ${calcolaCarteRimaste()}`;
-}
+          const remainingDiv = document.getElementById('remaining-counter');
+          if (remainingDiv) {
+            remainingDiv.innerText = `Carte rimaste nel mazzo: ${calcolaCarteRimaste()}`;
+          }
+
+          const probabilitaMano = calcolaProbabilitaMano();
+          let warningDiv = document.getElementById('probability-warning');
+          if (!warningDiv && remainingDiv) {
+            warningDiv = document.createElement('div');
+            warningDiv.id = 'probability-warning';
+            warningDiv.style.cssText =
+              'text-align:center;margin:.35rem 0 1rem;color:#ffb3b3;font-weight:700;';
+            remainingDiv.insertAdjacentElement('afterend', warningDiv);
+          }
+          if (warningDiv) {
+            warningDiv.textContent = probabilitaMano.valido
+              ? ''
+              : 'Attenzione: gli indizi non sono compatibili con le carte residue.';
+          }
           // --- ranking pescate: 1=ultima, 2=penultima, ecc.
           const drawn = carte
             .map((c, i) => ({ i, id: c.drawId || 0 }))
@@ -600,13 +793,23 @@ if (remainingDiv) {
               : COLORI;
             const numeriDaMostrare = c.numero ? [c.numero] : NUMERI;
         
-            const negColor = c.notColor;
-            const negNumber = c.notNumber;
-        
-        
-            const probCol = calcolaProbabilitaColori(c, i, coloriDaMostrare, numeriDaMostrare);
-            const probNum = calcolaProbabilitaNumeri(c, i, coloriDaMostrare, numeriDaMostrare);
-        
+            const negColor = [
+              ...(Array.isArray(c.notColor) ? c.notColor : []),
+              ...(Array.isArray(c.notColorAuto) ? c.notColorAuto : [])
+            ];
+            const negNumber = [
+              ...(Array.isArray(c.notNumber) ? c.notNumber : []),
+              ...(Array.isArray(c.notNumberAuto) ? c.notNumberAuto : [])
+            ];
+
+            const probabilitaCarta = probabilitaMano.carte[i];
+            const probCol = formattaPercentuali(
+              coloriDaMostrare.map(col => probabilitaCarta?.colori?.[col] || 0)
+            );
+            const probNum = formattaPercentuali(
+              numeriDaMostrare.map(num => probabilitaCarta?.numeri?.[num] || 0)
+            );
+
             const pescataLabel = drawLabelFor(i);
         
             return `
@@ -694,7 +897,7 @@ if (remainingDiv) {
     </script>
 
     <div class="hantrack">Hanabi tracker</div>
-    <div class="versione">1.60</div>
+    <div class="versione">1.61</div>
 </body>
 
 </html>
